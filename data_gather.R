@@ -67,13 +67,13 @@ olsinka_vpue[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
 
 #Calcule BPUE mean
 bpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("dl_layertype", "locality", "year"),
-                    split.factors.catch = c("ct_agegroup", "sp_scientificname"),
+                    split.factors.samplings = c("locality", "year"),
+                    split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("dl_layertype", "locality", "year"),
-                    split.factors.catch = c("ct_agegroup", "sp_scientificname"),
+                    split.factors.samplings = c("locality", "year"),
+                    split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpuem <- merge(cpue_lipm, bpue_lipm)
@@ -82,24 +82,30 @@ setnames(x = olsinka_vpuem, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
 olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
-# write.xlsx(olsinka_vpuem, here::here('olsinka_vpuem.xlsx'))
+olsinka_t <- dcast(data = olsinka_vpuem, formula = sp_scientificname ~ locality + year,
+                   value.var = "bpue_mean")
+write.xlsx(olsinka_t, here::here('olsinka_tb.xlsx'))
 
 #Mean####
 mean_size_olsinka <- catches_olsinka[!ct_sl == 0,.(Mean = round(mean(ct_sl, na.rm = T), 2),
                                                      SE = round(plotrix::std.error(ct_sl), 2),
                                                      Max = max(ct_sl),
                                                      Min = min(ct_sl)),
-                                       by =.(year, locality, sp_scientificname, ct_agegroup, dl_layertype)]
+                                       by =.(year, locality, sp_scientificname)]
 mean_size_olsinka[is.na(mean_size_olsinka)] <- 0
-# write.xlsx(mean_size_olsinka, here::here('mean_size_olsinka.xlsx'))
+olsinka_mt <- dcast(data = mean_size_olsinka, formula = sp_scientificname ~ locality + year,
+                   value.var = "Mean")
+# write.xlsx(olsinka_mt, here::here('olsinka_mt.xlsx'))
 
 mean_weight_olsinka <- catches_olsinka[!ct_weight == 0,.(Mean = round(mean(ct_weight, na.rm = T), 2),
                                              SE = round(plotrix::std.error(ct_weight), 2),
                                              Max = max(ct_weight),
                                              Min = min(ct_weight)),
-                                       by =.(year, locality, sp_scientificname, ct_agegroup, dl_layertype)]
+                                       by =.(year, locality, sp_scientificname)]
 mean_weight_olsinka[is.na(mean_weight_olsinka)] <- 0
-# write.xlsx(mean_weight_olsinka, here::here('mean_weight_olsinka.xlsx'))
+olsinka_wt <- dcast(data = mean_weight_olsinka, formula = sp_scientificname ~ locality + year,
+                    value.var = "Mean")
+# write.xlsx(olsinka_wt, here::here('olsinka_wt.xlsx'))
 
 
 
