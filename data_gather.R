@@ -67,12 +67,12 @@ olsinka_vpue[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
 
 #Calcule BPUE mean
 bpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("locality", "year"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year"),
                     split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("locality", "year"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year"),
                     split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
