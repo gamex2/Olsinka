@@ -49,13 +49,13 @@ catches_olsinka <- merge(catches_db, all_gill_depl[, .(sa_samplingid, year, loca
 #VPUE filter####
 #Calcule BPUE
 bpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "dl_layertype", "locality", "year"),
-                    split.factors.catch = c("ct_agegroup", "sp_scientificname"),
+                    split.factors.samplings = c("locality", "year"),
+                    split.factors.catch = c("sa_samplingid"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c('sa_samplingid', "dl_layertype", "locality", "year"),
-                    split.factors.catch = c("ct_agegroup", "sp_scientificname"),
+                    split.factors.samplings = c("locality", "year"),
+                    split.factors.catch = c("sa_samplingid"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpue <- merge(cpue_lip, bpue_lip)
@@ -82,9 +82,11 @@ setnames(x = olsinka_vpuem, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
 olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
-olsinka_t <- dcast(data = olsinka_vpuem, formula = sp_scientificname ~ locality + year,
-                   value.var = "bpue_mean")
-write.xlsx(olsinka_t, here::here('olsinka_tb.xlsx'))
+
+#
+# olsinka_t <- dcast(data = olsinka_vpuem, formula = sp_scientificname ~ locality + year,
+#                    value.var = "bpue_mean")
+# write.xlsx(olsinka_t, here::here('olsinka_tb.xlsx'))
 
 #Mean####
 mean_size_olsinka <- catches_olsinka[!ct_sl == 0,.(Mean = round(mean(ct_sl, na.rm = T), 2),
