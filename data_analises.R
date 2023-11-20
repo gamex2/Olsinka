@@ -12,12 +12,13 @@ CLD_bpue_lip <- multcomp::cld(pair_bpue_lip,
 setDT(CLD_bpue_lip)
 setnames(x = CLD_bpue_lip, old = c('.group'),
          new = c('locality_g'))
-olsinka_vpue <- merge(olsinka_vpue, CLD_bpue_lip[, .(locality, locality_g)], by = "locality")
+olsinka_vpue2 <- merge(olsinka_vpue2, CLD_bpue_lip[, .(locality, locality_g)], by = "locality")
 
-ggplot(olsinka_vpue, #bpue 
+ggplot(olsinka_vpue2, #bpue 
        aes(x = locality, y = bpue_mean, fill = locality_g)) +
-  geom_bar(stat="identity")+
+  geom_boxplot()+
   scale_fill_viridis_d(option = 'C')+
+  # coord_cartesian(ylim = c(0, 5)) +
   theme(strip.text = element_text(face = "italic")) +
   labs(x = NULL, y = 'BPUE in g per 1000m² net night')+
   theme(plot.title = element_text(size = 24, face = "bold"),
@@ -34,7 +35,6 @@ ggplot(olsinka_vpue, #bpue
 #sp####
 olsinka_vpuesp <- olsinka_vpuem[sp_scientificname %in% c("Cyprinus carpio", "Perca fluviatilis", "Sander lucioperca")]
 olsinka_vpuesp$locality <- factor(olsinka_vpuesp$locality, levels = c("Olsinska zatoka", "Pritok", "Hurka", "Hraz"))
-levels(olsinka_vpuesp$locality)[levels(olsinka_vpuesp$locality)=='Olsinska zatoka'] <- 'Olsinska'
 #Dcasting cpue####
 olsinka_vpuesp <- setDT(olsinka_vpuesp)
 dcast_olsinka_bpue <- dcast(data = olsinka_vpuesp, formula = locality + sa_samplingid + year ~ sp_scientificname,
@@ -79,13 +79,15 @@ CLD_steep_cpue_rimovsl$sp_scientificname <- "Sander lucioperca"
 
 test <- rbind(CLD_steep_cpue_rimovpf, CLD_steep_cpue_rimovcc)
 test <- rbind(test, CLD_steep_cpue_rimovsl)
-olsinka_vpuesp2 <- merge(olsinka_vpuesp, test[, .(sp_scientificname, locality, locality_g)], by = c("locality", "sp_scientificname"))
+olsinka_vpuesp2 <- olsinka_vpuem2[sp_scientificname %in% c("Cyprinus carpio", "Perca fluviatilis", "Sander lucioperca")]
+olsinka_vpuesp2 <- merge(olsinka_vpuesp2, test[, .(sp_scientificname, locality, locality_g)], by = c("locality", "sp_scientificname"))
 
 ggplot(olsinka_vpuesp2, #bpue 
        aes(x = locality, y = bpue_mean, fill = locality_g)) +
-  geom_bar(stat="identity")+
+  geom_boxplot()+
   scale_fill_viridis_d(option = 'C')+
-  facet_grid(year~sp_scientificname) +
+  facet_grid(~sp_scientificname) +
+  coord_cartesian(ylim = c(0, 25)) +
   theme(strip.text = element_text(face = "italic")) +
   labs(x = NULL, y = 'BPUE in g per 1000m² net night')+
   theme(plot.title = element_text(size = 24, face = "bold"),

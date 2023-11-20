@@ -65,6 +65,24 @@ setnames(x = olsinka_vpue, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_
 #tranforming 1000m? per net
 olsinka_vpue[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
 
+#Calcule BPUE
+bpue_lip2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
+                    split.factors.samplings = c("year"),
+                    split.factors.catch = c("locality"),
+                    id.colname = 'sa_samplingid', value.var = "ct_weightstar")
+#Calcule CPUE
+cpue_lip2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
+                    split.factors.samplings = c("year"),
+                    split.factors.catch = c("locality"),
+                    id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
+
+olsinka_vpue2 <- merge(cpue_lip2, bpue_lip2)
+#changing the name of variables
+setnames(x = olsinka_vpue2, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_abundancestar.mean','ct_abundancestar.se'),
+         new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
+#tranforming 1000m? per net
+olsinka_vpue2[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
+
 #Calcule BPUE mean
 bpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
                     split.factors.samplings = c("sa_samplingid", "locality", "year"),
@@ -82,6 +100,24 @@ setnames(x = olsinka_vpuem, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
 olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
+
+#Calcule BPUE mean
+bpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
+                     split.factors.samplings = c("locality", "year"),
+                     split.factors.catch = c("sp_scientificname"),
+                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
+#Calcule CPUE
+cpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
+                     split.factors.samplings = c("locality", "year"),
+                     split.factors.catch = c("sp_scientificname"),
+                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
+
+olsinka_vpuem2 <- merge(cpue_lipm2, bpue_lipm2)
+#changing the name of variables
+setnames(x = olsinka_vpuem2, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_abundancestar.mean','ct_abundancestar.se'),
+         new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
+#tranforming 1000m? per net
+olsinka_vpuem2[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
 
 #
 # olsinka_t <- dcast(data = olsinka_vpuem, formula = sp_scientificname ~ locality + year,
