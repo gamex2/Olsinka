@@ -2,7 +2,7 @@ source(here::here('packages.R'))
 source(here::here('functions.R'))
 
 #Data from the database#####
-con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
+# con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
 
 #Connecting to the database to extract info about Lipno
 #Latin names
@@ -25,6 +25,7 @@ all_gill_depl[, year := year(date_start)]
 #localities
 all_gill_depl <- all_gill_depl[localityid %in% c(9, 10, 12, 13)]#selecting the localities
 all_gill_depl <- all_gill_depl[year %in% c(2008, 2009, 2010, 2012, 2016, 2017)]#year that olsinka was sampled
+all_gill_depl <- all_gill_depl[depthlayerid %in% c("0-3-benthic", "0-3-pelagic", "3-6-benthic")]
 all_gill_depl$dl_layertype[all_gill_depl$dl_layertype == "benthic"] <- "Benthic"
 all_gill_depl$dl_layertype[all_gill_depl$dl_layertype == "pelagic"] <- "Pelagic"
 
@@ -39,6 +40,7 @@ catches_db <- setDT(readxl::read_xlsx(here::here('catches_db.xlsx')))
 #separating the target species
 catches_db <- merge(catches_db, specs[, .(sp_speciesid, sp_scientificname, sp_taxonomicorder)], by='sp_speciesid')
 catches_db <- catches_db[!sp_speciesid == 'EA']
+catches_db <- catches_db[!ct_agegroup == 'YOY']
 # catches_db <- catches_db[!sp_scientificname %in% c("Abramis sp.", "Abramis x Blicca", "Abramis brama x Blicca bjoerkna", "Abramis brama x Rutilus rutilus",
 #                                                    "Rutilus rutilus x Blicca bjoerkna", "Tinca tinca", "Gobio gobio", "Anguilla anguilla", "Carassius gibelio",
 #                                                    "Hypophthalmichthys nobilis", "Coregonus", "Oncorhynchus mykiss", "Hypophthalmichthys molitrix")]
@@ -49,13 +51,13 @@ catches_olsinka <- merge(catches_db, all_gill_depl[, .(sa_samplingid, year, loca
 #VPUE filter####
 #Calcule BPUE
 bpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("locality", "year"),
-                    split.factors.catch = c("sa_samplingid"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
+                    split.factors.catch = c("dl_layertype"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("locality", "year"),
-                    split.factors.catch = c("sa_samplingid"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
+                    split.factors.catch = c("dl_layertype"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpue <- merge(cpue_lip, bpue_lip)
@@ -63,17 +65,17 @@ olsinka_vpue <- merge(cpue_lip, bpue_lip)
 setnames(x = olsinka_vpue, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_abundancestar.mean','ct_abundancestar.se'),
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
-olsinka_vpue[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
+olsinka_vpue[, ':='(cpue_mean = cpue_mean*1000)]
 
 #Calcule BPUE
 bpue_lip2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("year"),
-                    split.factors.catch = c("locality"),
+                    split.factors.samplings = c("locality", "year", "depthlayerid"),
+                    split.factors.catch = c("dl_layertype"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lip2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("year"),
-                    split.factors.catch = c("locality"),
+                    split.factors.samplings = c("locality", "year", "depthlayerid"),
+                    split.factors.catch = c("dl_layertype"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpue2 <- merge(cpue_lip2, bpue_lip2)
@@ -81,17 +83,17 @@ olsinka_vpue2 <- merge(cpue_lip2, bpue_lip2)
 setnames(x = olsinka_vpue2, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_abundancestar.mean','ct_abundancestar.se'),
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
-olsinka_vpue2[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
+olsinka_vpue2[, ':='(cpue_mean = cpue_mean*1000)]
 
 #Calcule BPUE mean
 bpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year"),
-                    split.factors.catch = c("sp_scientificname"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
+                    split.factors.catch = c("sp_scientificname", "dl_layertype"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year"),
-                    split.factors.catch = c("sp_scientificname"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
+                    split.factors.catch = c("sp_scientificname", "dl_layertype"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpuem <- merge(cpue_lipm, bpue_lipm)
@@ -99,17 +101,17 @@ olsinka_vpuem <- merge(cpue_lipm, bpue_lipm)
 setnames(x = olsinka_vpuem, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_abundancestar.mean','ct_abundancestar.se'),
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
-olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
+olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000)]
 
 #Calcule BPUE mean
 bpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                     split.factors.samplings = c("locality", "year"),
-                     split.factors.catch = c("sp_scientificname"),
+                     split.factors.samplings = c("locality", "year", "depthlayerid"),
+                     split.factors.catch = c("sp_scientificname", "dl_layertype"),
                      id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                     split.factors.samplings = c("locality", "year"),
-                     split.factors.catch = c("sp_scientificname"),
+                     split.factors.samplings = c("locality", "year", "depthlayerid"),
+                     split.factors.catch = c("sp_scientificname", "dl_layertype"),
                      id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpuem2 <- merge(cpue_lipm2, bpue_lipm2)
@@ -117,7 +119,7 @@ olsinka_vpuem2 <- merge(cpue_lipm2, bpue_lipm2)
 setnames(x = olsinka_vpuem2, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_abundancestar.mean','ct_abundancestar.se'),
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
-olsinka_vpuem2[, ':='(cpue_mean = cpue_mean*1000, bpue_se = bpue_se*1000)]
+olsinka_vpuem2[, ':='(cpue_mean = cpue_mean*1000)]
 
 #
 # olsinka_t <- dcast(data = olsinka_vpuem, formula = sp_scientificname ~ locality + year,

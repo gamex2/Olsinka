@@ -4,23 +4,51 @@ set.seed(3333)
 lip_glm_bpue <- glm.nb(data = olsinka_vpue, formula = bpue_mean ~ locality)
 summary(lip_glm_bpue)
 
-pair_bpue_lip <- lsmeans(lip_glm_bpue, ~ locality)
-CLD_bpue_lip <- multcomp::cld(pair_bpue_lip,
-                               alpha=0.05,
-                               Letters=letters,
-                               adjust="sidak")
+pair_bpue_lip <- emmeans(lip_glm_bpue,~ locality, adjust="sidak", weights = "flat")
+CLD_bpue_lip <- multcomp::cld(pair_bpue_lip, 
+                              alpha=0.05,
+                              Letters=letters)
 setDT(CLD_bpue_lip)
 setnames(x = CLD_bpue_lip, old = c('.group'),
          new = c('locality_g'))
-olsinka_vpue2 <- merge(olsinka_vpue2, CLD_bpue_lip[, .(locality, locality_g)], by = "locality")
+olsinka_vpue3 <- merge(olsinka_vpue2, CLD_bpue_lip[, .(locality, locality_g)], by = c("locality"))
 
-ggplot(olsinka_vpue2, #bpue 
+set.seed(3333)
+lip_glm_bpue2 <- glm.nb(data = olsinka_vpue, formula = bpue_mean ~ locality + depthlayerid)
+summary(lip_glm_bpue2)
+pair_bpue_lip2 <- emmeans(lip_glm_bpue2,~ locality * depthlayerid, adjust="sidak", weights = "flat")
+CLD_bpue_lip2 <- multcomp::cld(pair_bpue_lip2, 
+                               alpha=0.05,
+                               Letters=letters)
+setDT(CLD_bpue_lip2)
+setnames(x = CLD_bpue_lip2, old = c('.group'),
+         new = c('depht_g'))
+olsinka_vpue3 <- merge(olsinka_vpue3, CLD_bpue_lip2[, .(locality, depthlayerid, depht_g)], by = c("locality", "depthlayerid"))
+
+ggplot(olsinka_vpue3, #bpue 
        aes(x = locality, y = bpue_mean, fill = locality_g)) +
   geom_boxplot()+
   scale_fill_viridis_d(option = 'C')+
-  # coord_cartesian(ylim = c(0, 5)) +
   theme(strip.text = element_text(face = "italic")) +
-  labs(x = NULL, y = 'BPUE in g per 1000m² net night')+
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinka_vpue3, #bpue depht 
+       aes(x = locality, y = bpue_mean, fill = depht_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'E')+
+  facet_grid(~depthlayerid) +
+  theme(strip.text = element_text(face = "italic")) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
   theme(plot.title = element_text(size = 24, face = "bold"),
         axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
         axis.text.y = element_text(size = 22), 
@@ -37,41 +65,39 @@ olsinka_vpuesp <- olsinka_vpuem[sp_scientificname %in% c("Cyprinus carpio", "Per
 olsinka_vpuesp$locality <- factor(olsinka_vpuesp$locality, levels = c("Olsinska zatoka", "Pritok", "Hurka", "Hraz"))
 #Dcasting cpue####
 olsinka_vpuesp <- setDT(olsinka_vpuesp)
-dcast_olsinka_bpue <- dcast(data = olsinka_vpuesp, formula = locality + sa_samplingid + year ~ sp_scientificname,
+dcast_olsinka_bpue <- dcast(data = olsinka_vpuesp, formula = locality + sa_samplingid + year + depthlayerid + dl_layertype ~ sp_scientificname,
                             value.var = "bpue_mean")
 dcast_olsinka_bpue <- setDT(dcast_olsinka_bpue)
 dcast_olsinka_bpue[is.na(dcast_olsinka_bpue)] <- 0
-lapply(dcast_olsinka_bpue[,c(3:5)], function(x) shapiro.test(x))
+lapply(dcast_olsinka_bpue[,c(6:8)], function(x) shapiro.test(x))
 
 set.seed(3333)
-ols_glm_bpuesp <- lapply(dcast_olsinka_bpue[,c(4:6)], function(x) glmer.nb(data = dcast_olsinka_bpue, formula = x ~ locality + (1|year)))
+ols_glm_bpuesp <- lapply(dcast_olsinka_bpue[,c(6:8)], function(x) glm.nb(data = dcast_olsinka_bpue, formula = x ~ locality))
 summary(ols_glm_bpuesp$`Cyprinus carpio`)
 summary(ols_glm_bpuesp$`Perca fluviatilis`)
 summary(ols_glm_bpuesp$`Sander lucioperca`)
 
-pair_steep_cpue_rimovcc <- emmeans(ols_glm_bpuesp$`Cyprinus carpio`,pairwise ~ locality, adjust="sidak", weights = "cells")
+pair_steep_cpue_rimovcc <- emmeans(ols_glm_bpuesp$`Cyprinus carpio`, pairwise ~ locality, adjust="sidak", weights = "flat")
 CLD_steep_cpue_rimovcc <- multcomp::cld(pair_steep_cpue_rimovcc,
-                                      Letters=letters)
+                                      Letters=letters, alpha = 0.05)
 setDT(CLD_steep_cpue_rimovcc)
 setnames(x = CLD_steep_cpue_rimovcc, old = c('.group'),
          new = c('locality_g'))
 CLD_steep_cpue_rimovcc$sp_scientificname <- "Cyprinus carpio"
 
-pair_steep_cpue_rimovpf <- emmeans(ols_glm_bpuesp$`Perca fluviatilis`,pairwise ~ locality, adjust="sidak", weights = "cells")
+pair_steep_cpue_rimovpf <- emmeans(ols_glm_bpuesp$`Perca fluviatilis`,pairwise ~ locality, adjust="sidak", weights = "flat")
 CLD_steep_cpue_rimovpf <- multcomp::cld(pair_steep_cpue_rimovpf,
                                         alpha=0.05,
-                                        Letters=letters,
-                                        adjust="sidak")
+                                        Letters=letters)
 setDT(CLD_steep_cpue_rimovpf)
 setnames(x = CLD_steep_cpue_rimovpf, old = c('.group'),
          new = c('locality_g'))
 CLD_steep_cpue_rimovpf$sp_scientificname <- "Perca fluviatilis"
 
-pair_steep_cpue_rimovsl <- emmeans(ols_glm_bpuesp$`Sander lucioperca`,pairwise ~ locality, adjust="sidak", weights = "cells")
+pair_steep_cpue_rimovsl <- emmeans(ols_glm_bpuesp$`Sander lucioperca`,pairwise ~ locality, adjust="sidak", weights = "flat")
 CLD_steep_cpue_rimovsl <- multcomp::cld(pair_steep_cpue_rimovsl,
                                         alpha=0.05,
-                                        Letters=letters,
-                                        adjust="sidak")
+                                        Letters=letters)
 setDT(CLD_steep_cpue_rimovsl)
 setnames(x = CLD_steep_cpue_rimovsl, old = c('.group'),
          new = c('locality_g'))
@@ -79,17 +105,17 @@ CLD_steep_cpue_rimovsl$sp_scientificname <- "Sander lucioperca"
 
 test <- rbind(CLD_steep_cpue_rimovpf, CLD_steep_cpue_rimovcc)
 test <- rbind(test, CLD_steep_cpue_rimovsl)
-olsinka_vpuesp2 <- olsinka_vpuem2[sp_scientificname %in% c("Cyprinus carpio", "Perca fluviatilis", "Sander lucioperca")]
-olsinka_vpuesp2 <- merge(olsinka_vpuesp2, test[, .(sp_scientificname, locality, locality_g)], by = c("locality", "sp_scientificname"))
+olsinka_vpuesp3 <- olsinka_vpuem2[sp_scientificname %in% c("Cyprinus carpio", "Perca fluviatilis", "Sander lucioperca")]
+olsinka_vpuesp3 <- merge(olsinka_vpuesp3, test[, .(sp_scientificname, locality, locality_g)], by = c("locality", "sp_scientificname"))
 
-ggplot(olsinka_vpuesp2, #bpue 
+ggplot(olsinka_vpuesp3[sp_scientificname == "Sander lucioperca"], #bpue 
        aes(x = locality, y = bpue_mean, fill = locality_g)) +
   geom_boxplot()+
   scale_fill_viridis_d(option = 'C')+
   facet_grid(~sp_scientificname) +
-  coord_cartesian(ylim = c(0, 25)) +
+  # coord_cartesian(ylim = c(0, 25)) +
   theme(strip.text = element_text(face = "italic")) +
-  labs(x = NULL, y = 'BPUE in g per 1000m² net night')+
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
   theme(plot.title = element_text(size = 24, face = "bold"),
         axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
         axis.text.y = element_text(size = 22), 
@@ -101,5 +127,42 @@ ggplot(olsinka_vpuesp2, #bpue
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+ggplot(olsinka_vpuesp3[sp_scientificname == "Cyprinus carpio"], #bpue 
+       aes(x = locality, y = bpue_mean, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  theme(strip.text = element_text(face = "italic")) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinka_vpuesp3[sp_scientificname == "Perca fluviatilis"], #bpue 
+       aes(x = locality, y = bpue_mean, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  theme(strip.text = element_text(face = "italic")) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
