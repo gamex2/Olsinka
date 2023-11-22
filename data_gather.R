@@ -85,9 +85,9 @@ setnames(x = olsinka_vpue2, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct
 #tranforming 1000m? per net
 olsinka_vpue2[, ':='(cpue_mean = cpue_mean*1000)]
 
-olsinka_tt <- dcast(data = olsinka_vpue2, formula = locality + year  ~ depthlayerid,
-                   value.var = "bpue_mean")
-write.xlsx(olsinka_tt, here::here('olsinka_tt.xlsx'))
+# olsinka_tt <- dcast(data = olsinka_vpue2, formula = locality + year ~ depthlayerid,
+#                    value.var = "ct_weightstar.sum", fun.aggregate = sum)
+# write.xlsx(olsinka_tt, here::here('olsinka_ts2.xlsx'))
 
 #Calcule BPUE mean
 bpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
@@ -109,12 +109,12 @@ olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000)]
 
 #Calcule BPUE mean
 bpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                     split.factors.samplings = c("locality", "year", "depthlayerid", "dl_layertype"),
+                     split.factors.samplings = c("locality", "year", "dl_layertype", "depthlayerid"),
                      split.factors.catch = c("sp_scientificname"),
                      id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                     split.factors.samplings = c("locality", "year", "depthlayerid", "dl_layertype"),
+                     split.factors.samplings = c("locality", "year", "dl_layertype", "depthlayerid"),
                      split.factors.catch = c("sp_scientificname"),
                      id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
@@ -126,9 +126,9 @@ setnames(x = olsinka_vpuem2, old = c('ct_weightstar.mean','ct_weightstar.se', 'c
 olsinka_vpuem2[, ':='(cpue_mean = cpue_mean*1000)]
 
 
-# olsinka_t <- dcast(data = olsinka_vpuem2, formula = locality + year + depthlayerid + dl_layertype ~ sp_scientificname,
-#                    value.var = "bpue_mean")
-# write.xlsx(olsinka_t, here::here('olsinka_tb.xlsx'))
+olsinka_t <- dcast(data = olsinka_vpuem2, formula = locality + year ~ sp_scientificname + depthlayerid,
+                   value.var = "bpue_mean", fun.aggregate = sum)
+write.xlsx(olsinka_t, here::here('olsinka_tb2.xlsx'))
 
 #Mean####
 mean_size_olsinka <- catches_olsinka[!ct_sl == 0,.(Mean = round(mean(ct_sl, na.rm = T), 2),
