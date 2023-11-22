@@ -46,18 +46,18 @@ catches_db <- catches_db[!ct_agegroup == 'YOY']
 #                                                    "Hypophthalmichthys nobilis", "Coregonus", "Oncorhynchus mykiss", "Hypophthalmichthys molitrix")]
 
 #insert impact
-catches_olsinka <- merge(catches_db, all_gill_depl[, .(sa_samplingid, year, locality, dl_layertype)], by = "sa_samplingid")
+catches_olsinka <- merge(catches_db, all_gill_depl[, .(sa_samplingid, year, locality, dl_layertype, depthlayerid)], by = "sa_samplingid")
 
 #VPUE filter####
 #Calcule BPUE
 bpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
-                    split.factors.catch = c("dl_layertype"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.catch = c("ct_agegroup"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
-                    split.factors.catch = c("dl_layertype"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.catch = c("ct_agegroup"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpue <- merge(cpue_lip, bpue_lip)
@@ -69,13 +69,13 @@ olsinka_vpue[, ':='(cpue_mean = cpue_mean*1000)]
 
 #Calcule BPUE
 bpue_lip2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("locality", "year", "depthlayerid"),
-                    split.factors.catch = c("dl_layertype"),
+                    split.factors.samplings = c("locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.catch = c("ct_agegroup"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lip2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("locality", "year", "depthlayerid"),
-                    split.factors.catch = c("dl_layertype"),
+                    split.factors.samplings = c("locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.catch = c("ct_agegroup"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpue2 <- merge(cpue_lip2, bpue_lip2)
@@ -85,15 +85,19 @@ setnames(x = olsinka_vpue2, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct
 #tranforming 1000m? per net
 olsinka_vpue2[, ':='(cpue_mean = cpue_mean*1000)]
 
+olsinka_tt <- dcast(data = olsinka_vpue2, formula = locality + year  ~ depthlayerid,
+                   value.var = "bpue_mean")
+write.xlsx(olsinka_tt, here::here('olsinka_tt.xlsx'))
+
 #Calcule BPUE mean
 bpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
-                    split.factors.catch = c("sp_scientificname", "dl_layertype"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid"),
-                    split.factors.catch = c("sp_scientificname", "dl_layertype"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpuem <- merge(cpue_lipm, bpue_lipm)
@@ -105,13 +109,13 @@ olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000)]
 
 #Calcule BPUE mean
 bpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                     split.factors.samplings = c("locality", "year", "depthlayerid"),
-                     split.factors.catch = c("sp_scientificname", "dl_layertype"),
+                     split.factors.samplings = c("locality", "year", "depthlayerid", "dl_layertype"),
+                     split.factors.catch = c("sp_scientificname"),
                      id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm2 <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                     split.factors.samplings = c("locality", "year", "depthlayerid"),
-                     split.factors.catch = c("sp_scientificname", "dl_layertype"),
+                     split.factors.samplings = c("locality", "year", "depthlayerid", "dl_layertype"),
+                     split.factors.catch = c("sp_scientificname"),
                      id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
 olsinka_vpuem2 <- merge(cpue_lipm2, bpue_lipm2)
@@ -121,8 +125,8 @@ setnames(x = olsinka_vpuem2, old = c('ct_weightstar.mean','ct_weightstar.se', 'c
 #tranforming 1000m? per net
 olsinka_vpuem2[, ':='(cpue_mean = cpue_mean*1000)]
 
-#
-# olsinka_t <- dcast(data = olsinka_vpuem, formula = sp_scientificname ~ locality + year,
+
+# olsinka_t <- dcast(data = olsinka_vpuem2, formula = locality + year + depthlayerid + dl_layertype ~ sp_scientificname,
 #                    value.var = "bpue_mean")
 # write.xlsx(olsinka_t, here::here('olsinka_tb.xlsx'))
 
@@ -131,9 +135,9 @@ mean_size_olsinka <- catches_olsinka[!ct_sl == 0,.(Mean = round(mean(ct_sl, na.r
                                                      SE = round(plotrix::std.error(ct_sl), 2),
                                                      Max = max(ct_sl),
                                                      Min = min(ct_sl)),
-                                       by =.(year, locality, sp_scientificname)]
+                                       by =.(year, locality, depthlayerid, sp_scientificname)]
 mean_size_olsinka[is.na(mean_size_olsinka)] <- 0
-olsinka_mt <- dcast(data = mean_size_olsinka, formula = sp_scientificname ~ locality + year,
+olsinka_mt <- dcast(data = mean_size_olsinka, formula = sp_scientificname ~ locality + year + depthlayerid,
                    value.var = "Mean")
 # write.xlsx(olsinka_mt, here::here('olsinka_mt.xlsx'))
 
@@ -141,9 +145,9 @@ mean_weight_olsinka <- catches_olsinka[!ct_weight == 0,.(Mean = round(mean(ct_we
                                              SE = round(plotrix::std.error(ct_weight), 2),
                                              Max = max(ct_weight),
                                              Min = min(ct_weight)),
-                                       by =.(year, locality, sp_scientificname)]
+                                       by =.(year, locality, depthlayerid, sp_scientificname)]
 mean_weight_olsinka[is.na(mean_weight_olsinka)] <- 0
-olsinka_wt <- dcast(data = mean_weight_olsinka, formula = sp_scientificname ~ locality + year,
+olsinka_wt <- dcast(data = mean_weight_olsinka, formula = sp_scientificname ~ locality + year + depthlayerid,
                     value.var = "Mean")
 # write.xlsx(olsinka_wt, here::here('olsinka_wt.xlsx'))
 

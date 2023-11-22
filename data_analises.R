@@ -113,7 +113,6 @@ ggplot(olsinka_vpuesp3[sp_scientificname == "Sander lucioperca"], #bpue
   geom_boxplot()+
   scale_fill_viridis_d(option = 'C')+
   facet_grid(~sp_scientificname) +
-  # coord_cartesian(ylim = c(0, 25)) +
   theme(strip.text = element_text(face = "italic")) +
   labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
   theme(plot.title = element_text(size = 24, face = "bold"),
@@ -132,7 +131,6 @@ ggplot(olsinka_vpuesp3[sp_scientificname == "Cyprinus carpio"], #bpue
   geom_boxplot()+
   scale_fill_viridis_d(option = 'C')+
   facet_grid(~sp_scientificname) +
-  # coord_cartesian(ylim = c(0, 25)) +
   theme(strip.text = element_text(face = "italic")) +
   labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
   theme(plot.title = element_text(size = 24, face = "bold"),
@@ -151,7 +149,6 @@ ggplot(olsinka_vpuesp3[sp_scientificname == "Perca fluviatilis"], #bpue
   geom_boxplot()+
   scale_fill_viridis_d(option = 'C')+
   facet_grid(~sp_scientificname) +
-  # coord_cartesian(ylim = c(0, 25)) +
   theme(strip.text = element_text(face = "italic")) +
   labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
   theme(plot.title = element_text(size = 24, face = "bold"),
@@ -165,4 +162,94 @@ ggplot(olsinka_vpuesp3[sp_scientificname == "Perca fluviatilis"], #bpue
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+#sp with depthlayer####
+set.seed(3333)
+ols_glm_bpuesp2 <- lapply(dcast_olsinka_bpue[,c(6:8)], function(x) glm.nb(data = dcast_olsinka_bpue, formula = x ~ locality + depthlayerid))
+summary(ols_glm_bpuesp2$`Cyprinus carpio`)
+summary(ols_glm_bpuesp2$`Perca fluviatilis`)
+summary(ols_glm_bpuesp2$`Sander lucioperca`)
+
+pair_steep_cpue_rimovcc2 <- emmeans(ols_glm_bpuesp2$`Cyprinus carpio`, ~ locality * depthlayerid, weights = "cell")
+CLD_steep_cpue_rimovcc2 <- multcomp::cld(pair_steep_cpue_rimovcc2,
+                                        Letters=letters, alpha = 0.05)
+setDT(CLD_steep_cpue_rimovcc2)
+setnames(x = CLD_steep_cpue_rimovcc2, old = c('.group'),
+         new = c('depht_g'))
+CLD_steep_cpue_rimovcc2$sp_scientificname <- "Cyprinus carpio"
+
+pair_steep_cpue_rimovpf2 <- emmeans(ols_glm_bpuesp2$`Perca fluviatilis`, ~ locality * depthlayerid, adjust="sidak", weights = "flat")
+CLD_steep_cpue_rimovpf2 <- multcomp::cld(pair_steep_cpue_rimovpf2,
+                                        alpha=0.05,
+                                        Letters=letters)
+setDT(CLD_steep_cpue_rimovpf2)
+setnames(x = CLD_steep_cpue_rimovpf2, old = c('.group'),
+         new = c('depht_g'))
+CLD_steep_cpue_rimovpf2$sp_scientificname <- "Perca fluviatilis"
+
+pair_steep_cpue_rimovsl2 <- emmeans(ols_glm_bpuesp2$`Sander lucioperca`, ~ locality * depthlayerid, adjust="sidak", weights = "flat")
+CLD_steep_cpue_rimovsl2 <- multcomp::cld(pair_steep_cpue_rimovsl2,
+                                        alpha=0.05,
+                                        Letters=letters)
+setDT(CLD_steep_cpue_rimovsl2)
+setnames(x = CLD_steep_cpue_rimovsl2, old = c('.group'),
+         new = c('depht_g'))
+CLD_steep_cpue_rimovsl2$sp_scientificname <- "Sander lucioperca"
+
+test2 <- rbind(CLD_steep_cpue_rimovpf2, CLD_steep_cpue_rimovcc2)
+test2 <- rbind(test2, CLD_steep_cpue_rimovsl2)
+olsinka_vpuesp3 <- merge(olsinka_vpuesp3, test2[, .(sp_scientificname, locality, depthlayerid, depht_g)], by = c("locality", "depthlayerid", "sp_scientificname"))
+
+ggplot(olsinka_vpuesp3[sp_scientificname == "Sander lucioperca"], #bpue 
+       aes(x = locality, y = bpue_mean, fill = depht_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(depthlayerid~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinka_vpuesp3[sp_scientificname == "Cyprinus carpio"], #bpue 
+       aes(x = locality, y = bpue_mean, fill = depht_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(depthlayerid~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinka_vpuesp3[sp_scientificname == "Perca fluviatilis"], #bpue 
+       aes(x = locality, y = bpue_mean, fill = depht_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(depthlayerid~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
