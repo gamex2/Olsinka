@@ -253,3 +253,207 @@ ggplot(olsinka_vpuesp3[sp_scientificname == "Perca fluviatilis"], #bpue
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+#True bpue####
+olsinska_trbpue$locality <- factor(olsinska_trbpue$locality, levels = c("Olsinska zatoka", "Pritok", "Hurka", "Hraz"))
+shapiro.test(olsinska_trbpue$truebpue)
+set.seed(3333)
+lip_glm_tbpue <- glm.nb(data = olsinska_trbpue, formula = truebpue ~ locality)
+summary(lip_glm_tbpue)
+
+pair_tbpue_lip <- emmeans(lip_glm_tbpue,pairwise ~ locality, adjust="tukey")
+CLD_tbpue_lip <- multcomp::cld(pair_tbpue_lip, 
+                              alpha=0.05,
+                              Letters=letters)
+setDT(CLD_tbpue_lip)
+setnames(x = CLD_tbpue_lip, old = c('.group'),
+         new = c('locality_g'))
+olsinska_trbpue3 <- merge(olsinska_trbpue, CLD_tbpue_lip[, .(locality, locality_g)], by = c("locality"))
+olsinska_trbpue3$locality <- factor(olsinska_trbpue3$locality, levels = c("Pritok", "Hurka", "Olsinska zatoka", "Hraz"))
+ggplot(olsinska_trbpue3, #bpue 
+       aes(x = locality, y = truebpue, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 5, col = 'black', position = position_dodge(.9)) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 4, col = 'white', position = position_dodge(.9)) +
+  theme(strip.text = element_text(face = "italic")) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+#TRUE BPUE sp####
+olsinska_trbpuesp2 <- olsinska_trbpuesp[sp_scientificname %in% c("Cyprinus carpio", "Perca fluviatilis", "Sander lucioperca", "Blicca bjoerkna", "Abramis brama")]
+olsinska_trbpuesp2$locality <- factor(olsinska_trbpuesp2$locality, levels = c("Olsinska zatoka", "Pritok", "Hurka", "Hraz"))
+#Dcasting cpue####
+olsinska_trbpuesp2 <- setDT(olsinska_trbpuesp2)
+dcast_olsinka_tbpue <- dcast(data = olsinska_trbpuesp2, formula = locality + year ~ sp_scientificname,
+                            value.var = "truebpue")
+dcast_olsinka_tbpue <- setDT(dcast_olsinka_tbpue)
+dcast_olsinka_tbpue[is.na(dcast_olsinka_tbpue)] <- 0
+lapply(dcast_olsinka_tbpue[,c(3:7)], function(x) shapiro.test(x))
+
+set.seed(3333)
+ols_glm_tbpuesp <- lapply(dcast_olsinka_tbpue[,c(3:7)], function(x) glm.nb(data = dcast_olsinka_tbpue, formula = x ~ locality))
+summary(ols_glm_tbpuesp$`Cyprinus carpio`)
+summary(ols_glm_tbpuesp$`Perca fluviatilis`)
+summary(ols_glm_tbpuesp$`Sander lucioperca`)
+summary(ols_glm_tbpuesp$`Blicca bjoerkna`)
+summary(ols_glm_tbpuesp$`Abramis brama`)
+
+pair_tbpue_cc <- emmeans(ols_glm_tbpuesp$`Cyprinus carpio`, pairwise ~ locality, adjust="sidak", weights = "flat")
+CLD_tbpue_cc <- multcomp::cld(pair_tbpue_cc,
+                                        Letters = letters, alpha = 0.05)
+setDT(CLD_tbpue_cc)
+setnames(x = CLD_tbpue_cc, old = c('.group'),
+         new = c('locality_g'))
+CLD_tbpue_cc$sp_scientificname <- "Cyprinus carpio"
+
+pair_tbpue_pf <- emmeans(ols_glm_tbpuesp$`Perca fluviatilis`,pairwise ~ locality, adjust="sidak", weights = "flat")
+CLD_tbpue_pf <- multcomp::cld(pair_tbpue_pf,
+                                        alpha = 0.05,
+                                        Letters = letters)
+setDT(CLD_tbpue_pf)
+setnames(x = CLD_tbpue_pf, old = c('.group'),
+         new = c('locality_g'))
+CLD_tbpue_pf$sp_scientificname <- "Perca fluviatilis"
+
+pair_tbpue_sl <- emmeans(ols_glm_tbpuesp$`Sander lucioperca`,pairwise ~ locality, adjust="sidak", weights = "flat")
+CLD_tbpue_sl <- multcomp::cld(pair_tbpue_sl,
+                                        alpha=0.05,
+                                        Letters=letters)
+setDT(CLD_tbpue_sl)
+setnames(x = CLD_tbpue_sl, old = c('.group'),
+         new = c('locality_g'))
+CLD_tbpue_sl$sp_scientificname <- "Sander lucioperca"
+
+pair_tbpue_bj <- emmeans(ols_glm_tbpuesp$`Blicca bjoerkna`,pairwise ~ locality, adjust="sidak", weights = "flat")
+CLD_tbpue_bj <- multcomp::cld(pair_tbpue_bj,
+                              alpha=0.05,
+                              Letters=letters)
+setDT(CLD_tbpue_bj)
+setnames(x = CLD_tbpue_bj, old = c('.group'),
+         new = c('locality_g'))
+CLD_tbpue_bj$sp_scientificname <- "Blicca bjoerkna"
+
+pair_tbpue_ab <- emmeans(ols_glm_tbpuesp$`Abramis brama`,pairwise ~ locality, adjust="sidak", weights = "flat")
+CLD_tbpue_ab <- multcomp::cld(pair_tbpue_ab,
+                              alpha=0.05,
+                              Letters=letters)
+setDT(CLD_tbpue_ab)
+setnames(x = CLD_tbpue_ab, old = c('.group'),
+         new = c('locality_g'))
+CLD_tbpue_ab$sp_scientificname <- "Abramis brama"
+
+test_tb <- rbind(CLD_tbpue_cc, CLD_tbpue_pf)
+test_tb <- rbind(test_tb, CLD_tbpue_sl)
+test_tb <- rbind(test_tb, CLD_tbpue_bj)
+test_tb <- rbind(test_tb, CLD_tbpue_ab)
+olsinska_trbpuesp3 <- merge(olsinska_trbpuesp2, test_tb[, .(sp_scientificname, locality, locality_g)], by = c("locality", "sp_scientificname"))
+olsinska_trbpuesp3$locality <- factor(olsinska_trbpuesp3$locality, levels = c("Pritok", "Hurka", "Olsinska zatoka", "Hraz"))
+
+ggplot(olsinska_trbpuesp3[sp_scientificname == "Sander lucioperca"], #bpue 
+       aes(x = locality, y = truebpue, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 5, col = 'black', position = position_dodge(.9)) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 4, col = 'white', position = position_dodge(.9)) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinska_trbpuesp3[sp_scientificname == "Cyprinus carpio"], #bpue 
+       aes(x = locality, y = truebpue, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 5, col = 'black', position = position_dodge(.9)) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 4, col = 'white', position = position_dodge(.9)) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinska_trbpuesp3[sp_scientificname == "Perca fluviatilis"], #bpue 
+       aes(x = locality, y = truebpue, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 5, col = 'black', position = position_dodge(.9)) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 4, col = 'white', position = position_dodge(.9)) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinska_trbpuesp3[sp_scientificname == "Blicca bjoerkna"], #bpue 
+       aes(x = locality, y = truebpue, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 5, col = 'black', position = position_dodge(.9)) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 4, col = 'white', position = position_dodge(.9)) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinska_trbpuesp3[sp_scientificname == "Abramis brama"], #bpue 
+       aes(x = locality, y = truebpue, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 5, col = 'black', position = position_dodge(.9)) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 4, col = 'white', position = position_dodge(.9)) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
