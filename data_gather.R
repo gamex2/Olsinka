@@ -127,6 +127,7 @@ olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Pritok"] <- 0.5
 olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Olsinska zatoka"] <- 0.5
 olsinska_trbpuesp$bpue <- olsinska_trbpuesp$mbenthic + olsinska_trbpuesp$spelagic * olsinska_trbpuesp$alpha
 olsinska_trbpuesp$truebpue <- olsinska_trbpuesp$bpue*2
+olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.03, w = truebpue)]
 # write.xlsx(olsinka_vpuem, here::here('olsinka_vpuem.xlsx'))
 
 #Calcule BPUE mean
