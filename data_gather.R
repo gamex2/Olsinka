@@ -128,6 +128,9 @@ olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Olsinska zatoka"] <- 0.5
 olsinska_trbpuesp$bpue <- olsinska_trbpuesp$mbenthic + olsinska_trbpuesp$spelagic * olsinska_trbpuesp$alpha
 olsinska_trbpuesp$truebpue <- olsinska_trbpuesp$bpue*2
 olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.03, w = truebpue)]
+olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Alburnus alburnus"] <- "Other"
+olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Leuciscus aspius"] <- "Other"
+olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Rutilus rutilus"] <- "Other"
 # write.xlsx(olsinka_vpuem, here::here('olsinka_vpuem.xlsx'))
 
 #Calcule BPUE mean

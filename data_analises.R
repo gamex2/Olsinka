@@ -457,3 +457,43 @@ ggplot(olsinska_trbpuesp3[sp_scientificname == "Abramis brama"], #bpue
         legend.text = element_text(size = 18, face = "italic")) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(olsinska_trbpuesp3[sp_scientificname == "Abramis brama"], #bpue 
+       aes(x = locality, y = truebpue, fill = locality_g)) +
+  geom_boxplot()+
+  scale_fill_viridis_d(option = 'C')+
+  facet_grid(~sp_scientificname) +
+  theme(strip.text = element_text(face = "italic")) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 5, col = 'black', position = position_dodge(.9)) +
+  stat_summary(fun = mean, geom = "point", shape = 20, size = 4, col = 'white', position = position_dodge(.9)) +
+  labs(x = NULL, y = 'BPUE in Kg per 1000m² net night')+
+  theme(plot.title = element_text(size = 24, face = "bold"),
+        axis.text.x = element_text(size = 18,angle = 45, hjust = 0.5, vjust = 0.5),
+        axis.text.y = element_text(size = 22), 
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=22),
+        legend.text = element_text(size = 18, face = "italic")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+#Total per sp####
+ggplot(data = olsinska_trbpuesp, 
+       aes(x = locality, y = truebpue, fill = sp_grouped)) + 
+  geom_bar(stat="identity") + 
+  labs(x = "Locality", y = 'BPUE in Kg per 1000m² net night', fill = "Species")+
+  facet_wrap(~year)+
+  scale_fill_viridis_d(option = 'D')+
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
