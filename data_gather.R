@@ -2,7 +2,7 @@ source(here::here('packages.R'))
 source(here::here('functions.R'))
 
 #Data from the database#####
-# con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
+con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
 
 #Connecting to the database to extract info about Lipno
 #Latin names
@@ -35,6 +35,7 @@ all_gill_depl$dl_layertype[all_gill_depl$dl_layertype == "pelagic"] <- "Pelagic"
 #                                                                   ;", sep = "")))
 # write.xlsx(catches_db, here::here('catches_db.xlsx'))
 catches_db <- setDT(readxl::read_xlsx(here::here('catches_db.xlsx')))
+
 # dbDisconnect(con)
 
 #separating the target species
@@ -128,9 +129,10 @@ olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Olsinska zatoka"] <- 0.5
 olsinska_trbpuesp$bpue <- olsinska_trbpuesp$mbenthic + olsinska_trbpuesp$spelagic * olsinska_trbpuesp$alpha
 olsinska_trbpuesp$truebpue <- olsinska_trbpuesp$bpue*2
 olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.03, w = truebpue)]
-olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Alburnus alburnus"] <- "Other"
-olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Leuciscus aspius"] <- "Other"
-olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Rutilus rutilus"] <- "Other"
+olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_grouped == "Other"] <- "Others"
+# olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Alburnus alburnus"] <- "Other"
+# olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Leuciscus aspius"] <- "Other"
+# olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Rutilus rutilus"] <- "Others"
 # write.xlsx(olsinka_vpuem, here::here('olsinka_vpuem.xlsx'))
 
 #Calcule BPUE mean
@@ -150,9 +152,10 @@ setnames(x = olsinka_vpuem2, old = c('ct_weightstar.mean','ct_weightstar.se', 'c
          new = c('bpue_mean','bpue_se', 'cpue_mean','cpue_se'))#rename the outputs
 #tranforming 1000m? per net
 olsinka_vpuem2[, ':='(cpue_mean = cpue_mean*1000)]
-
-
-# olsinka_t <- dcast(data = olsinka_vpuem2, formula = locality + year ~ sp_scientificname + dl_layertype,
+# vpue_test <- olsinka_vpuem2[locality == 'Olsinska zatoka']
+# olsinka_vpuem2[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.01, w = bpue_mean)]
+# olsinka_vpuem2$sp_grouped[olsinka_vpuem2$sp_scientificname == "Coregonus"] <- "Other"
+# olsinka_t <- dcast(data = olsinka_vpuem2, formula = locality + year + dl_layertype ~ sp_grouped,
 #                    value.var = "bpue_mean", fun.aggregate = sum)
 # write.xlsx(olsinka_t, here::here('olsinka_tb.xlsx'))
 
