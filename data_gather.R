@@ -52,7 +52,7 @@ catches_olsinka <- merge(catches_db, all_gill_depl[, .(sa_samplingid, year, loca
 #VPUE filter####
 #Calcule BPUE
 bpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "depthlayerid", "dl_layertype"),
                     split.factors.catch = c("ct_agegroup"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
@@ -69,15 +69,15 @@ setnames(x = olsinka_vpue, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct_
 olsinka_vpue[, ':='(cpue_mean = cpue_mean*1000)]
 
 olsinska_btbpue <- olsinka_vpue[dl_layertype == 'Benthic',.(mbenthic = round(mean(bpue_mean, na.rm = T), 2)),
-                               by =.(year, locality)]
+                               by =.(locality)]
 olsinska_plbpue <- olsinka_vpue[dl_layertype == 'Pelagic',.(spelagic = round(sum(bpue_mean, na.rm = T), 2)),
-                                by =.(year, locality)]
-olsinska_trbpue <- merge(olsinska_btbpue, olsinska_plbpue, by = c("year", "locality"))
+                                by =.(locality)]
+olsinska_trbpue <- merge(olsinska_btbpue, olsinska_plbpue, by = c("locality"))
 olsinska_trbpue$alpha[olsinska_trbpue$locality == "Hraz"] <- 0.9
 olsinska_trbpue$alpha[olsinska_trbpue$locality == "Hurka"] <- 0.7
 olsinska_trbpue$alpha[olsinska_trbpue$locality == "Pritok"] <- 0.5
 olsinska_trbpue$alpha[olsinska_trbpue$locality == "Olsinska zatoka"] <- 0.5
-olsinska_trbpue$bpue <- olsinska_trbpue$mbenthic + olsinska_trbpue$spelagic * olsinska_trbpue$alpha
+olsinska_trbpue$bpue <- olsinska_trbpue$mbenthic + (olsinska_trbpue$spelagic * olsinska_trbpue$alpha)
 olsinska_trbpue$truebpue <- olsinska_trbpue$bpue*2
 # write.xlsx(olsinka_vpue, here::here('olsinka_vpue.xlsx'))
 
@@ -101,12 +101,12 @@ olsinka_vpue2[, ':='(cpue_mean = cpue_mean*1000)]
 
 #Calcule BPUE mean
 bpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype"),
                     split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 #Calcule CPUE
 cpue_lipm <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                    split.factors.samplings = c("sa_samplingid", "locality", "year", "depthlayerid", "dl_layertype"),
+                    split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype"),
                     split.factors.catch = c("sp_scientificname"),
                     id.colname = 'sa_samplingid', value.var = "ct_abundancestar")
 
@@ -117,18 +117,18 @@ setnames(x = olsinka_vpuem, old = c('ct_weightstar.mean','ct_weightstar.se', 'ct
 #tranforming 1000m? per net
 olsinka_vpuem[, ':='(cpue_mean = cpue_mean*1000)]
 
-olsinska_btbpuesp <- olsinka_vpuem[dl_layertype == 'Benthic',.(mbenthic = round(mean(bpue_mean, na.rm = T), 2)),
-                                by =.(locality, year, sp_scientificname)]
-olsinska_plbpuesp <- olsinka_vpuem[dl_layertype == 'Pelagic',.(spelagic = round(sum(bpue_mean, na.rm = T), 2)),
-                                by =.(locality, year, sp_scientificname)]
-olsinska_trbpuesp <- merge(olsinska_btbpuesp, olsinska_plbpuesp, by = c("locality", "year", 'sp_scientificname'))
+olsinska_btbpuesp <- bpue_lipm[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
+                                by =.(locality, sp_scientificname)]
+olsinska_plbpuesp <- bpue_lipm[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
+                                by =.(locality, sp_scientificname)]
+olsinska_trbpuesp <- merge(olsinska_btbpuesp, olsinska_plbpuesp, by = c("locality", 'sp_scientificname'))
 olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Hraz"] <- 0.9
 olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Hurka"] <- 0.7
 olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Pritok"] <- 0.5
 olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Olsinska zatoka"] <- 0.5
 olsinska_trbpuesp$bpue <- olsinska_trbpuesp$mbenthic + olsinska_trbpuesp$spelagic * olsinska_trbpuesp$alpha
 olsinska_trbpuesp$truebpue <- olsinska_trbpuesp$bpue*2
-olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.03, w = truebpue)]
+olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.05, w = truebpue, other_level = "Others")]
 olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_grouped == "Other"] <- "Others"
 # olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Alburnus alburnus"] <- "Other"
 # olsinska_trbpuesp$sp_grouped[olsinska_trbpuesp$sp_scientificname == "Leuciscus aspius"] <- "Other"
