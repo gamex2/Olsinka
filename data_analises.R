@@ -500,7 +500,7 @@ olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.05, w
 ggplot(data = olsinska_trbpuesp, 
        aes(x = locality, y = truebpue, fill = sp_grouped)) + 
   geom_bar(stat="identity") + 
-  labs(x = "Locality", y = 'biomass in Kg per 1000m² net night', fill = "Species")+
+  labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night', fill = "Species")+
   # facet_wrap(~year)+
   scale_fill_viridis_d(option = 'D')+
   theme(plot.title = element_text(size = 32, face = "bold"),
@@ -549,7 +549,7 @@ ggplot(data = olsinska_trbpuespy,
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-#True bpue per sp####
+#True bpue per locality####
 #Calcule BPUE mean
 tbpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
                        split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype"),
@@ -570,9 +570,9 @@ olsinska_trbpue$truebpue <- olsinska_trbpue$bpue*2
 ggplot(data = olsinska_trbpue, 
        aes(x = locality, y = truebpue, fill = locality)) + 
   geom_bar(stat="identity") + 
-  labs(x = "Locality", y = 'biomass in Kg per 1000m² net night', fill = "Species")+
+  labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night')+
   # facet_wrap(~year)+
-  scale_fill_viridis_d(option = 'D')+
+  scale_fill_viridis_d(option = 'C')+
   theme(plot.title = element_text(size = 32, face = "bold"),
         axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
         axis.text.y = element_text(size = 28),
@@ -582,7 +582,8 @@ ggplot(data = olsinska_trbpue,
         legend.title = element_text(size=28),
         legend.text = element_text(size = 26, face = "italic"))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  theme(legend.position = "none")
 
 #Calcule BPUE year
 tbpue_liy <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
@@ -604,9 +605,9 @@ olsinska_trbpuey$truebpue <- olsinska_trbpuey$bpue*2
 ggplot(data = olsinska_trbpuey, 
        aes(x = locality, y = truebpue, fill = locality)) + 
   geom_bar(stat="identity") + 
-  labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night', fill = "Species")+
+  labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night')+
   facet_wrap(~year)+
-  scale_fill_viridis_d(option = 'D')+
+  scale_fill_viridis_d(option = 'C')+
   theme(plot.title = element_text(size = 32, face = "bold"),
         axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
         axis.text.y = element_text(size = 28),
@@ -616,4 +617,5 @@ ggplot(data = olsinska_trbpuey,
         legend.title = element_text(size=28),
         legend.text = element_text(size = 26, face = "italic"))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  theme(legend.position = "none")
