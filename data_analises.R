@@ -555,6 +555,7 @@ tbpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka,
                        split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype"),
                        split.factors.catch = c("ct_agegroup"),
                        id.colname = 'sa_samplingid', value.var = "ct_weightstar")
+# write.xlsx(tbpue_lip, here::here('tbpue_lip.xlsx'))
 olsinska_btbpue <- tbpue_lip[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
                                  by =.(locality)]
 olsinska_plbpue <- tbpue_lip[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
