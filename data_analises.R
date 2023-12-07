@@ -478,45 +478,45 @@ ggplot(olsinska_trbpuesp3[sp_scientificname == "Abramis brama"], #bpue
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-#True bpue per sp####
-#Calcule BPUE mean
-tbpue_lipsp <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                     split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype"),
-                     split.factors.catch = c("sp_scientificname"),
-                     id.colname = 'sa_samplingid', value.var = "ct_weightstar")
-olsinska_btbpuesp <- tbpue_lipsp[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
-                               by =.(locality, sp_scientificname)]
-olsinska_plbpuesp <- tbpue_lipsp[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
-                               by =.(locality, sp_scientificname)]
-olsinska_trbpuesp <- merge(olsinska_btbpuesp, olsinska_plbpuesp, by = c("locality", 'sp_scientificname'))
-olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Hraz"] <- 0.9
-olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Hurka"] <- 0.7
-olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Pritok"] <- 0.5
-olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Olsinska zatoka"] <- 0.5
-olsinska_trbpuesp$bpue <- olsinska_trbpuesp$mbenthic + olsinska_trbpuesp$spelagic * olsinska_trbpuesp$alpha
-olsinska_trbpuesp$truebpue <- olsinska_trbpuesp$bpue*2
-olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.05, w = truebpue, other_level = "Others")]
-
-ggplot(data = olsinska_trbpuesp, 
-       aes(x = locality, y = truebpue, fill = sp_grouped)) + 
-  geom_bar(stat="identity") + 
-  labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night', fill = "Species")+
-  # facet_wrap(~year)+
-  scale_fill_viridis_d(option = 'D')+
-  theme(plot.title = element_text(size = 32, face = "bold"),
-        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
-        axis.text.y = element_text(size = 28),
-        strip.text = element_text(size = 14),
-        axis.title.x = element_text(size = 20),
-        axis.title.y = element_text(size = 26),
-        legend.title = element_text(size=28),
-        legend.text = element_text(size = 26, face = "italic"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+# #True bpue per sp####
+# #Calcule BPUE mean
+# tbpue_lipsp <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
+#                      split.factors.samplings = c("depthlayerid", "locality", "dl_layertype"),
+#                      split.factors.catch = c("sp_scientificname"),
+#                      id.colname = 'sa_samplingid', value.var = "ct_weightstar")
+# olsinska_btbpuesp <- tbpue_lipsp[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
+#                                by =.(locality, sp_scientificname)]
+# olsinska_plbpuesp <- tbpue_lipsp[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
+#                                by =.(locality, sp_scientificname)]
+# olsinska_trbpuesp <- merge(olsinska_btbpuesp, olsinska_plbpuesp, by = c("locality", 'sp_scientificname'))
+# olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Hraz"] <- 0.9
+# olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Hurka"] <- 0.7
+# olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Pritok"] <- 0.5
+# olsinska_trbpuesp$alpha[olsinska_trbpuesp$locality == "Olsinska zatoka"] <- 0.5
+# olsinska_trbpuesp$bpue <- olsinska_trbpuesp$mbenthic + olsinska_trbpuesp$spelagic * olsinska_trbpuesp$alpha
+# olsinska_trbpuesp$truebpue <- olsinska_trbpuesp$bpue*2
+# olsinska_trbpuesp[, sp_grouped := fct_lump(f = sp_scientificname, prop = 0.05, w = truebpue, other_level = "Others")]
+# 
+# ggplot(data = olsinska_trbpuesp, 
+#        aes(x = locality, y = truebpue, fill = sp_grouped)) + 
+#   geom_bar(stat="identity") + 
+#   labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night', fill = "Species")+
+#   # facet_wrap(~year)+
+#   scale_fill_viridis_d(option = 'D')+
+#   theme(plot.title = element_text(size = 32, face = "bold"),
+#         axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+#         axis.text.y = element_text(size = 28),
+#         strip.text = element_text(size = 14),
+#         axis.title.x = element_text(size = 20),
+#         axis.title.y = element_text(size = 26),
+#         legend.title = element_text(size=28),
+#         legend.text = element_text(size = 26, face = "italic"))+
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 #Calcule BPUE year
 tbpue_liysp <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                       split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype", "year"),
+                       split.factors.samplings = c("depthlayerid", "locality", "dl_layertype", "year"),
                        split.factors.catch = c("sp_scientificname"),
                        id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 olsinska_btbpuespy <- tbpue_liysp[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
@@ -549,46 +549,46 @@ ggplot(data = olsinska_trbpuespy,
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-#True bpue per locality####
-#Calcule BPUE mean
-tbpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                       split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype"),
-                       split.factors.catch = c("ct_agegroup"),
-                       id.colname = 'sa_samplingid', value.var = "ct_weightstar")
-# write.xlsx(tbpue_lip, here::here('tbpue_lip.xlsx'))
-olsinska_btbpue <- tbpue_lip[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
-                                 by =.(locality)]
-olsinska_plbpue <- tbpue_lip[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
-                                 by =.(locality)]
-olsinska_trbpue <- merge(olsinska_btbpue, olsinska_plbpue, by = c("locality"))
-olsinska_trbpue$alpha[olsinska_trbpue$locality == "Hraz"] <- 0.9
-olsinska_trbpue$alpha[olsinska_trbpue$locality == "Hurka"] <- 0.7
-olsinska_trbpue$alpha[olsinska_trbpue$locality == "Pritok"] <- 0.5
-olsinska_trbpue$alpha[olsinska_trbpue$locality == "Olsinska zatoka"] <- 0.5
-olsinska_trbpue$bpue <- olsinska_trbpue$mbenthic + olsinska_trbpue$spelagic * olsinska_trbpue$alpha
-olsinska_trbpue$truebpue <- olsinska_trbpue$bpue*2
-
-ggplot(data = olsinska_trbpue, 
-       aes(x = locality, y = truebpue, fill = locality)) + 
-  geom_bar(stat="identity") + 
-  labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night')+
-  # facet_wrap(~year)+
-  scale_fill_viridis_d(option = 'C')+
-  theme(plot.title = element_text(size = 32, face = "bold"),
-        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
-        axis.text.y = element_text(size = 28),
-        strip.text = element_text(size = 14),
-        axis.title.x = element_text(size = 20),
-        axis.title.y = element_text(size = 26),
-        legend.title = element_text(size=28),
-        legend.text = element_text(size = 26, face = "italic"))+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  theme(legend.position = "none")
+# #True bpue per locality####
+# #Calcule BPUE mean
+# tbpue_lip <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
+#                        split.factors.samplings = c("depthlayerid", "locality", "dl_layertype"),
+#                        split.factors.catch = c("ct_agegroup"),
+#                        id.colname = 'sa_samplingid', value.var = "ct_weightstar")
+# # write.xlsx(tbpue_lip, here::here('tbpue_lip.xlsx'))
+# olsinska_btbpue <- tbpue_lip[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
+#                                  by =.(locality)]
+# olsinska_plbpue <- tbpue_lip[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
+#                                  by =.(locality)]
+# olsinska_trbpue <- merge(olsinska_btbpue, olsinska_plbpue, by = c("locality"))
+# olsinska_trbpue$alpha[olsinska_trbpue$locality == "Hraz"] <- 0.9
+# olsinska_trbpue$alpha[olsinska_trbpue$locality == "Hurka"] <- 0.7
+# olsinska_trbpue$alpha[olsinska_trbpue$locality == "Pritok"] <- 0.5
+# olsinska_trbpue$alpha[olsinska_trbpue$locality == "Olsinska zatoka"] <- 0.5
+# olsinska_trbpue$bpue <- olsinska_trbpue$mbenthic + olsinska_trbpue$spelagic * olsinska_trbpue$alpha
+# olsinska_trbpue$truebpue <- olsinska_trbpue$bpue*2
+# 
+# ggplot(data = olsinska_trbpue, 
+#        aes(x = locality, y = truebpue, fill = locality)) + 
+#   geom_bar(stat="identity") + 
+#   labs(x = "Locality", y = 'Biomass in Kg per 1000m² net night')+
+#   # facet_wrap(~year)+
+#   scale_fill_viridis_d(option = 'C')+
+#   theme(plot.title = element_text(size = 32, face = "bold"),
+#         axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+#         axis.text.y = element_text(size = 28),
+#         strip.text = element_text(size = 14),
+#         axis.title.x = element_text(size = 20),
+#         axis.title.y = element_text(size = 26),
+#         legend.title = element_text(size=28),
+#         legend.text = element_text(size = 26, face = "italic"))+
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#         panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+#   theme(legend.position = "none")
 
 #Calcule BPUE year
 tbpue_liy <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka, 
-                       split.factors.samplings = c("sa_samplingid", "locality", "dl_layertype", "year"),
+                       split.factors.samplings = c("depthlayerid", "locality", "dl_layertype", "year"),
                        split.factors.catch = c("ct_agegroup"),
                        id.colname = 'sa_samplingid', value.var = "ct_weightstar")
 olsinska_btbpuey <- tbpue_liy[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
