@@ -519,6 +519,7 @@ tbpue_liysp <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka,
                        split.factors.samplings = c("depthlayerid", "locality", "dl_layertype", "year"),
                        split.factors.catch = c("sp_scientificname"),
                        id.colname = 'sa_samplingid', value.var = "ct_weightstar")
+
 olsinska_btbpuespy <- tbpue_liysp[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
                                  by =.(locality, sp_scientificname, year)]
 olsinska_plbpuespy <- tbpue_liysp[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
@@ -591,6 +592,7 @@ tbpue_liy <- getVPUE(samplings = all_gill_depl, catch = catches_olsinka,
                        split.factors.samplings = c("depthlayerid", "locality", "dl_layertype", "year"),
                        split.factors.catch = c("ct_agegroup"),
                        id.colname = 'sa_samplingid', value.var = "ct_weightstar")
+# write.xlsx(tbpue_liy, here::here('tbpue_liy.xlsx'))
 olsinska_btbpuey <- tbpue_liy[dl_layertype == 'Benthic',.(mbenthic = round(mean(ct_weightstar.mean, na.rm = T), 2)),
                                   by =.(locality, year)]
 olsinska_plbpuey <- tbpue_liy[dl_layertype == 'Pelagic',.(spelagic = round(sum(ct_weightstar.mean, na.rm = T), 2)),
