@@ -2,7 +2,7 @@ source(here::here('packages.R'))
 source(here::here('functions.R'))
 
 #Data from the database#####
-con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
+# con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
 
 #Connecting to the database to extract info about Lipno
 #Latin names

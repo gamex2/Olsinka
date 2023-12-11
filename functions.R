@@ -214,7 +214,7 @@ getVPUE <- function(samplings, catch, split.factors.catch,
   catch.sampl[, VPUE := value.var.sum / Effort]
   
   #populate sampling table by factor values
-  catch.agg <- catch.sampl[, .(VPUE.mean = mean(VPUE), VPUE.se = plotrix::std.error(VPUE), 
+  catch.agg <- catch.sampl[, .(VPUE.mean = round(mean(VPUE), 2), VPUE.se = plotrix::std.error(VPUE), 
                                VPUE.sum = sum(value.var.sum),  sampcount = sampcount[1], 
                                catch.rowcount = sum(fishcount)), by = split.factors]
   
