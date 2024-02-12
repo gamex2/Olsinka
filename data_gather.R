@@ -12,25 +12,11 @@ con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fis
 specs <- setDT(readxl::read_xlsx(here::here('specs.xlsx')))
 
 # Gillnet deployments####
-all_gill_depl <- data.table(dbGetQuery(conn = con, statement = "SELECT *
-FROM fishecu.gillnet_sampling_merged_wide
-WHERE reservoirid IN (2);"))
-write.xlsx(all_gill_depl, here::here('all_gill_depl.xlsx'))
+# all_gill_depl <- data.table(dbGetQuery(conn = con, statement = "SELECT *
+# FROM fishecu.gillnet_sampling_merged_wide
+# WHERE reservoirid IN (2);"))
+# write.xlsx(all_gill_depl, here::here('all_gill_depl.xlsx'))
 all_gill_depl <- setDT(readxl::read_xlsx(here::here('all_gill_depl.xlsx')))
-
-#beachsein
-all_seining <- data.table(dbGetQuery(conn = con, statement = "SELECT *
-FROM fishecu.beachsein_sampling;"))
-all_sampling <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.sampling
-                                                                  WHERE  sa_samplingid IN ('",paste(all_seining$sa_samplingid, collapse = "','"), "')
-                                                                  ;", sep = "")))
-all_locality <- data.table(dbGetQuery(conn = con, statement = "SELECT *
-FROM fishecu.locality;"))
-sein_sampl <- merge(all_seining, all_sampling, by = 'sa_samplingid')
-sein_sampl[, year := year(sa_date_start)]
-sein_sampl <- sein_sampl[year == 2016]
-sein_sampl <- merge(sein_sampl, all_locality, by = 'lo_localityid')
-sein_sampl <- sein_sampl[lo_localityid == 154]
 
 # all_catch <- data.table(dbGetQuery(conn = con, statement = "SELECT *
 # FROM fishecu.catch;"))
