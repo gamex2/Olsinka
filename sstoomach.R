@@ -25,7 +25,7 @@ all_locality <- setDT(readxl::read_xlsx(here::here('all_locality.xlsx')))
 # all_sampling <- all_sampling[grep("LIP", all_sampling$sa_samplingid), ]
 # write.xlsx(all_sampling, here::here('all_sampling.xlsx'))
 all_sampling <- setDT(readxl::read_xlsx(here::here('all_sampling.xlsx')))
-
+all_sampling <- merge(all_sampling, all_locality, by = "lo_localityid")
 
 # Gillnet deployments####
 # all_gill_sto <- data.table(dbGetQuery(conn = con, statement = "SELECT *
@@ -84,34 +84,14 @@ all_pas <- setDT(readxl::read_xlsx(here::here('all_pas.xlsx')))
 # write.xlsx(catches_pas, here::here('catches_pas.xlsx'))
 catches_pas <- setDT(readxl::read_xlsx(here::here('catches_pas.xlsx')))
 
+#All catch####
+# all_catch <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch;")))
+# all_catch_lip <- all_catch[grep("LIP", all_catch$sa_samplingid), ]
+# write.xlsx(all_catch_lip, here::here('all_catch_lip.xlsx'))
+all_catch_lip <- setDT(readxl::read_xlsx(here::here('all_catch_lip.xlsx')))
+all_catch_lip[, year := year(sa_date_start)]
+irisSubset_ca_sa <- all_catch_lip[year == 2010]
 
-
-
-
-irisSubset_tra <- all_trawling[grep("F2010LIP", all_trawling$sa_samplingid), ]
-
-sein_sampl <- merge(all_seining, all_sampling, by = 'sa_samplingid')
-sein_sampl[, year := year(sa_date_start)]
-sein_sampl <- sein_sampl[year == 2016]
-sein_sampl <- merge(sein_sampl, all_locality, by = 'lo_localityid')
-sein_sampl <- sein_sampl[lo_localityid == 154]
-# 
-# catches_db <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch
-#                                                                   WHERE  sa_samplingid IN ('",paste(all_gill_sto$sa_samplingid, collapse = "','"), "')
-#                                                                   ;", sep = "")))
-# write.xlsx(catches_db, here::here('all_catch.xlsx'))
-all_catch <- setDT(readxl::read_xlsx(here::here('all_catch.xlsx')))
-all_catch <- merge(all_catch, specs[, .(sp_speciesid, sp_scientificname, sp_taxonomicorder)], by='sp_speciesid')
-irisSubset_sa <- all_gill_sto[grep("F2016LIP", all_gill_sto$sa_samplingid), ]
-irisSubset_ca <- all_catch[grep("F2016LIP", all_catch$sa_samplingid), ]
-irisSubset_ca_sa <- merge(irisSubset_ca, irisSubset_sa[, .(sa_samplingid, gi_deployment_date_start)], by = "sa_samplingid")
-
-Stomach_content <- setDT(read_excel("Stomach content.xlsx", sheet = "all"))
-Stomach_content <- merge(Stomach_content, all_catch[, .(ct_catchid, sa_samplingid, sp_scientificname, ct_tl, ct_weight, ct_sex, ct_agegroup)], by = 'ct_catchid')
-write.xlsx(Stomach_content, here::here('Stomach_content.xlsx'))
-catches_sei <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch
-                                                                  WHERE  sa_samplingid IN ('",paste(sein_sampl$sa_samplingid, collapse = "','"), "')
-                                                                  ;", sep = "")))
 
 all_sampling[, year := year(date_start)]
 #finding fish####
