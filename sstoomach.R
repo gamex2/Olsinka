@@ -39,7 +39,6 @@ all_gill_sto <- setDT(readxl::read_xlsx(here::here('all_gill_sto.xlsx')))
 #                                                                   WHERE  sa_samplingid IN ('",paste(all_gill_sto$sa_samplingid, collapse = "','"), "')
 #                                                                   ;", sep = "")))
 # write.xlsx(catches_gillnet, here::here('catches_gillnet.xlsx'))
-# catches_gillnet <- setDT(readxl::read_xlsx(here::here('catches_gillnet.xlsx')))
 catches_gillnet <- setDT(readxl::read_xlsx(here::here('catches_gillnet.xlsx')))
 
 
