@@ -2,7 +2,7 @@ source(here::here('packages.R'))
 source(here::here('functions.R'))
 
 #Data from the database#####
-con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
+# con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
 # dbDisconnect(con)
 #Connecting to the database to extract info about Lipno
 
@@ -26,6 +26,7 @@ all_locality <- setDT(readxl::read_xlsx(here::here('all_locality.xlsx')))
 # write.xlsx(all_sampling, here::here('all_sampling.xlsx'))
 all_sampling <- setDT(readxl::read_xlsx(here::here('all_sampling.xlsx')))
 all_sampling <- merge(all_sampling, all_locality, by = "lo_localityid")
+all_sampling[, year := year(sa_date_start)]
 
 # Gillnet deployments####
 # all_gill_sto <- data.table(dbGetQuery(conn = con, statement = "SELECT *
@@ -33,6 +34,7 @@ all_sampling <- merge(all_sampling, all_locality, by = "lo_localityid")
 # all_gill_sto <- all_gill_sto[grep("LIP", all_gill_sto$sa_samplingid), ]
 # write.xlsx(all_gill_sto, here::here('all_gill_sto.xlsx'))
 all_gill_sto <- setDT(readxl::read_xlsx(here::here('all_gill_sto.xlsx')))
+all_gill_sto <- merge(all_gill_sto, all_sampling[, .(sa_samplingid, sa_date_start, lo_nameczech)], by = "sa_samplingid")
 
 #Catches from gillnet####
 # catches_gillnet <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch
@@ -85,16 +87,19 @@ all_pas <- setDT(readxl::read_xlsx(here::here('all_pas.xlsx')))
 catches_pas <- setDT(readxl::read_xlsx(here::here('catches_pas.xlsx')))
 
 #All catch####
-# all_catch <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch;")))
-# all_catch_lip <- all_catch[grep("LIP", all_catch$sa_samplingid), ]
+all_catch <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch;")))
+write.xlsx(all_catch, here::here('all_catch.xlsx'))
+all_catch_lip <- all_catch[grep("LIP", all_catch$sa_samplingid), ]
 # write.xlsx(all_catch_lip, here::here('all_catch_lip.xlsx'))
 all_catch_lip <- setDT(readxl::read_xlsx(here::here('all_catch_lip.xlsx')))
-all_catch_lip[, year := year(sa_date_start)]
-irisSubset_ca_sa <- all_catch_lip[year == 2010]
+all_gill_sto[, year := year(sa_date_start)]
+irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid, ct_sl, ct_weight, ct_diet)], 
+                       all_sampling[, .(sa_samplingid, lo_nameczech, sa_date_start, year)],
+                       by = "sa_samplingid")
+irisSubset_ca_sa <- irisSubset_ca[year == 2021]
 
 
-all_sampling[, year := year(date_start)]
 #finding fish####
-irisSubset_ca_sa[sp_speciesid == "bolen" & ct_sl == 200]
+irisSubset_ca_sa[sp_speciesid == "candat" & ct_sl == 69]
 
 
