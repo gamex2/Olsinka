@@ -18,21 +18,6 @@ specs <- setDT(readxl::read_xlsx(here::here('specs.xlsx')))
 # write.xlsx(all_gill_depl, here::here('all_gill_depl.xlsx'))
 all_gill_depl <- setDT(readxl::read_xlsx(here::here('all_gill_depl.xlsx')))
 
-# all_catch <- data.table(dbGetQuery(conn = con, statement = "SELECT *
-# FROM fishecu.catch;"))
-# write.xlsx(all_catch, here::here('all_catch.xlsx'))
-all_catch <- merge(all_catch, specs[, .(sp_speciesid, sp_scientificname, sp_taxonomicorder)], by='sp_speciesid')
-
-
-Stomach_content <- setDT(read_excel("Stomach content.xlsx", sheet = "all"))
-Stomach_content <- merge(Stomach_content, all_catch[, .(ct_catchid, sa_samplingid, sp_scientificname, ct_tl, ct_weight, ct_sex, ct_agegroup)], by = 'ct_catchid')
-Stomach_content3 <- merge(Stomach_content, all_gill_depl[, .(sa_samplingid, depthlayerid, date_start, locality, dl_layertype)], by = 'sa_samplingid')
-Stomach_content2 <- merge(Stomach_content, all_gill_depl[, .(sa_samplingid, depthlayerid, date_start, locality, dl_layertype)], by = 'sa_samplingid')
-
-catches_sei <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch
-                                                                  WHERE  sa_samplingid IN ('",paste(sein_sampl$sa_samplingid, collapse = "','"), "')
-                                                                  ;", sep = "")))
-
 #Vilém's function renaming
 setnames(x = all_gill_depl,old = 'gearsize', new = 'Effort')#changing the name of effort to Effort to allow the function to run
 all_gill_depl[, year := year(date_start)]

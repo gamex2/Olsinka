@@ -87,9 +87,9 @@ all_pas <- setDT(readxl::read_xlsx(here::here('all_pas.xlsx')))
 catches_pas <- setDT(readxl::read_xlsx(here::here('catches_pas.xlsx')))
 
 #All catch####
-all_catch <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch;")))
-write.xlsx(all_catch, here::here('all_catch.xlsx'))
-all_catch_lip <- all_catch[grep("LIP", all_catch$sa_samplingid), ]
+# all_catch <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch;")))
+# write.xlsx(all_catch, here::here('all_catch.xlsx'))
+# all_catch_lip <- all_catch[grep("LIP", all_catch$sa_samplingid), ]
 # write.xlsx(all_catch_lip, here::here('all_catch_lip.xlsx'))
 all_catch_lip <- setDT(readxl::read_xlsx(here::here('all_catch_lip.xlsx')))
 all_gill_sto[, year := year(sa_date_start)]
@@ -98,8 +98,38 @@ irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid
                        by = "sa_samplingid")
 irisSubset_ca_sa <- irisSubset_ca[year == 2021]
 
-
 #finding fish####
 irisSubset_ca_sa[sp_speciesid == "candat" & ct_sl == 69]
+
+#Protected area graph
+MPA <- setDT(read.delim(here::here('MPA.txt')))
+setnames(x = MPA, old = c('Record.Count', "Publication.Years"), new = c('MPA', "Year"))
+MPA <- MPA[,-3]
+FPA <- setDT(read.delim(here::here('FPA.txt')))
+setnames(x = FPA, old = c('Record.Count', "Publication.Years"), new = c('FPA', "Year"))
+FPA <- FPA[,-3]
+PA.pubc <- merge(MPA, FPA, all.x = T, by = "Year")
+PA.pubc[is.na(PA.pubc)] <- 0
+PA.pubc <- PA.pubc[-35,]
+PA.melt <- melt(PA.pubc, id = "Year")
+setnames(x = PA.melt, old = 'value', new = 'Publications')
+ggplot(data = PA.melt, 
+       aes(x = Year, y = Publications, fill = variable)) + 
+  geom_bar(stat="identity", position=position_dodge()) + 
+  labs(y = 'Publications per year', fill = "Area type")+
+  scale_fill_viridis_d(option = 'D')+
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+
 
 
