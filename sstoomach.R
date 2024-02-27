@@ -50,7 +50,8 @@ catches_gillnet <- setDT(readxl::read_xlsx(here::here('catches_gillnet.xlsx')))
 # all_seining <- all_seining[grep("LIP", all_seining$sa_samplingid), ]
 # write.xlsx(all_seining, here::here('all_seining.xlsx'))
 all_seining <- setDT(readxl::read_xlsx(here::here('all_seining.xlsx')))
-
+all_seining_lo <- merge(all_seining, all_sampling[, .(sa_samplingid, lo_nameczech, sa_date_start, year)], by = "sa_samplingid")
+  
 #Catches from beachsein
 # catches_seining <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch
 #                                                                   WHERE  sa_samplingid IN ('",paste(all_seining$sa_samplingid, collapse = "','"), "')
@@ -93,13 +94,18 @@ catches_pas <- setDT(readxl::read_xlsx(here::here('catches_pas.xlsx')))
 # write.xlsx(all_catch_lip, here::here('all_catch_lip.xlsx'))
 all_catch_lip <- setDT(readxl::read_xlsx(here::here('all_catch_lip.xlsx')))
 all_gill_sto[, year := year(sa_date_start)]
-irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid, ct_sl, ct_weight, ct_diet)], 
+irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid, ct_sl, ct_weight, ct_diet, ct_sex)], 
                        all_sampling[, .(sa_samplingid, lo_nameczech, sa_date_start, year)],
                        by = "sa_samplingid")
 irisSubset_ca_sa <- irisSubset_ca[year == 2021]
 
 #finding fish####
 irisSubset_ca_sa[sp_speciesid == "candat" & ct_sl == 69]
+fish_diet_2019_2021 <- setDT(fish_diet_2019_2021)
+fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021, irisSubset_ca[, .(sa_samplingid, ct_catchid, year, lo_nameczech, ct_sex)], by = "ct_catchid")
+fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021_2, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
+fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021_2, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid)], by = "sa_samplingid", all.x = T)
+write.xlsx(fish_diet_2019_2021_2, here::here('fish_diet_2019_2021_2.xlsx'))
 
 #Protected area graph
 MPA <- setDT(read.delim(here::here('MPA.txt')))
