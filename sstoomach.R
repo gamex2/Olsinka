@@ -101,11 +101,18 @@ irisSubset_ca_sa <- irisSubset_ca[year == 2021]
 
 #finding fish####
 irisSubset_ca_sa[sp_speciesid == "candat" & ct_sl == 69]
+fish_diet_2019_2021 <- setDT(readxl::read_xlsx(here::here('fish_diet_2019_2021.xlsx')))
 fish_diet_2019_2021 <- setDT(fish_diet_2019_2021)
 fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021, irisSubset_ca[, .(sa_samplingid, ct_catchid, year, lo_nameczech, ct_sex)], by = "ct_catchid")
 fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021_2, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
 fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021_2, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid)], by = "sa_samplingid", all.x = T)
 write.xlsx(fish_diet_2019_2021_2, here::here('fish_diet_2019_2021_2.xlsx'))
+
+Stomach_content_km <- setDT(read_excel("Stomach_content_km.xlsx", sheet = "all_stom"))
+Stomach_content_km <- merge(Stomach_content_km, specs[, .(sp_scientificname, sp_speciesid)], by = "sp_scientificname", all.x = T)
+Stomach_content_km <- merge(Stomach_content_km, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
+Stomach_content_km <- merge(Stomach_content_km, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid, lo_nameczech, sa_date_start)], by = "sa_samplingid", all.x = T)
+write.xlsx(Stomach_content_km, here::here('Stomach_content_km2.xlsx'))
 
 #Protected area graph
 MPA <- setDT(read.delim(here::here('MPA.txt')))
@@ -135,6 +142,33 @@ ggplot(data = PA.melt,
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+#Protected area graph
+Fresh <- setDT(read.delim(here::here('Fresh.txt')))
+setnames(x = Fresh, old = c('Record.Count', "Publication.Years"), new = c('Freshwater', "Year"))
+Fresh <- Fresh[,-3]
+Marine <- setDT(read.delim(here::here('Marine.txt')))
+setnames(x = Marine, old = c('Record.Count', "Publication.Years"), new = c('Marine', "Year"))
+Marine <- Marine[,-3]
+PA.pubc <- merge(Marine, Fresh, all = T, by = "Year")
+PA.pubc[is.na(PA.pubc)] <- 0
+PA.pubc <- PA.pubc[!Year == 2024]
+PA.melt <- melt(PA.pubc, id = "Year")
+setnames(x = PA.melt, old = 'value', new = 'Publications')
+ggplot(data = PA.melt, 
+       aes(x = Year, y = Publications, fill = variable)) + 
+  geom_bar(stat="identity", position=position_dodge()) + 
+  labs(y = 'Publications per year', fill = "Environment")+
+  scale_fill_viridis_d(option = 'D')+
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
 
