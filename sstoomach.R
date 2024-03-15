@@ -139,11 +139,14 @@ PA.pubc[is.na(PA.pubc)] <- 0
 PA.pubc <- PA.pubc[-35,]
 PA.melt <- melt(PA.pubc, id = "Year")
 setnames(x = PA.melt, old = 'value', new = 'Publications')
+PA.melt <- setDT(PA.melt)
+PA.melt <- mutate(PA.melt, log_var = log(Publications+1))
 ggplot(data = PA.melt, 
-       aes(x = Year, y = Publications, fill = variable)) + 
-  geom_bar(stat="identity", position=position_dodge()) + 
-  labs(y = 'Publications per year', fill = "Area type")+
-  scale_fill_viridis_d(option = 'D')+
+       aes(x = Year, y = log_var, fill = variable)) + 
+  geom_bar(stat="identity", position = position_dodge()) + 
+  geom_text(aes(label=Publications, y = log_var + 0.25), position = position_dodge(width = 0.9), size = 6.5, angle = 90) +
+  labs(y = 'Log(n) publications per year', fill = "Area type")+
+  scale_fill_viridis_d(option = 'E')+
   theme(plot.title = element_text(size = 32, face = "bold"),
         axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
         axis.text.y = element_text(size = 28),
@@ -155,7 +158,7 @@ ggplot(data = PA.melt,
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-#Protected area graph
+#area graph#area graphlog10()
 Fresh <- setDT(read.delim(here::here('Fresh.txt')))
 setnames(x = Fresh, old = c('Record.Count', "Publication.Years"), new = c('Freshwater', "Year"))
 Fresh <- Fresh[,-3]
@@ -171,7 +174,7 @@ ggplot(data = PA.melt,
        aes(x = Year, y = Publications, fill = variable)) + 
   geom_bar(stat="identity", position=position_dodge()) + 
   labs(y = 'Publications per year', fill = "Environment")+
-  scale_fill_viridis_d(option = 'D')+
+  scale_fill_viridis_d(option = 'E')+
   theme(plot.title = element_text(size = 32, face = "bold"),
         axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
         axis.text.y = element_text(size = 28),
@@ -191,10 +194,16 @@ Stomach_content_all[["Sex"]][is.na(Stomach_content_all[["Sex"]])] <- "X"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
-Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
-Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
+# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
+# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
 colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
-
+new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL)], 
+                irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl)], by = "ct_catchid")
+checking <- new_tb %>%
+mutate(check1 = case_when(SL == ct_sl ~ "ok_checked", 
+                          SL != ct_sl ~ "danger", 
+                        TRUE ~ NA_character_))   
+ unique(checking$check1) 
 hist(Stomach_content_all$Stomach_content)
 count(Stomach_content_all$Stomach_content)
 table(data.frame(Stomach_content_all[1], value = unlist(Stomach_content_all[-1])))
