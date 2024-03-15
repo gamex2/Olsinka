@@ -66,6 +66,7 @@ catches_seining <- setDT(readxl::read_xlsx(here::here('catches_seining.xlsx')))
 # all_trawling <- all_trawling[grep("LIP", all_trawling$sa_samplingid), ]
 # write.xlsx(all_trawling, here::here('all_trawling.xlsx'))
 all_trawling <- setDT(readxl::read_xlsx(here::here('all_trawling.xlsx')))
+all_trawling <- merge(all_trawling, all_sampling[, .(sa_samplingid, lo_nameczech, sa_date_start, year)], by = "sa_samplingid")
 
 #Catches from trawling
 # catches_trawling <- data.table(dbGetQuery(conn = con, statement = paste("SELECT * FROM fishecu.catch
@@ -97,7 +98,12 @@ all_gill_sto[, year := year(sa_date_start)]
 irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid, ct_sl, ct_weight, ct_diet, ct_sex)], 
                        all_sampling[, .(sa_samplingid, lo_nameczech, sa_date_start, year)],
                        by = "sa_samplingid")
+irisSubset_at <- merge(irisSubset_ca, all_trawling[, .(sa_samplingid, dl_depthlayerid)],
+                       by = "sa_samplingid", all.x = T)
 irisSubset_ca_sa <- irisSubset_ca[year == 2021]
+all_gill_sto[sa_samplingid == "F2012LIP-AT9"]
+all_trawling[sa_samplingid == "F2012LIP-AT9"]
+all_seining_lo[sa_samplingid == "F2012LIP-AT9"]
 
 #finding fish####
 irisSubset_ca_sa[sp_speciesid == "candat" & ct_sl == 69]
@@ -113,6 +119,13 @@ Stomach_content_km <- merge(Stomach_content_km, specs[, .(sp_scientificname, sp_
 Stomach_content_km <- merge(Stomach_content_km, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
 Stomach_content_km <- merge(Stomach_content_km, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid, lo_nameczech, sa_date_start)], by = "sa_samplingid", all.x = T)
 write.xlsx(Stomach_content_km, here::here('Stomach_content_km2.xlsx'))
+
+Fish_diet_Bydz <- setDT(read_excel("Fish_diet_Bydz.xlsx"))
+Fish_diet_Bydz <- merge(Fish_diet_Bydz, all_catch_lip[, .(ct_catchid, ct_sex, sa_samplingid)], by = "ct_catchid")
+Fish_diet_Bydz <- merge(Fish_diet_Bydz, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
+Fish_diet_Bydz <- merge(Fish_diet_Bydz, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid, lo_nameczech, sa_date_start)], by = "sa_samplingid", all.x = T)
+Fish_diet_Bydz[, year := year(sa_date_start)]
+write.xlsx(Fish_diet_Bydz, here::here('Fish_diet_Bydz2.xlsx'))
 
 #Protected area graph
 MPA <- setDT(read.delim(here::here('MPA.txt')))
@@ -171,5 +184,34 @@ ggplot(data = PA.melt,
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
+#data analises stomach
+Stomach_content_all <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx')))
+Stomach_content_all[, 12:68][is.na(Stomach_content_all[, 12:68])] <- 0
+Stomach_content_all[["Sex"]][is.na(Stomach_content_all[["Sex"]])] <- "X"
+Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
+Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
+Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
+Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
+Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
+colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
+
+hist(Stomach_content_all$Stomach_content)
+count(Stomach_content_all$Stomach_content)
+table(data.frame(Stomach_content_all[1], value = unlist(Stomach_content_all[-1])))
+
+#Weigth calculation####
+#candat 2010
+c10 <- irisSubset_ca%>%
+  dplyr::filter(sp_speciesid == "sumec" & year == 2010 & !is.na(ct_weight))
+c10$logL <- log(c10$ct_sl)
+c10$logW <- log(c10$ct_weight)
+models <- lapply(split(c10, c10$sp_speciesid), 'lm', formula = logW ~ logL)
+
+#Sander Lucioperca
+mydata <- setDT(structure(list(ct_sl = c(580, 246, 2)), 
+                          class = "data.table"))
+mydata[, ct_wg_comp := predict.lm(object = models$`sumec`,
+                                       newdata = data.frame(logL = log(mydata$ct_sl)))]
+mydata$ct_wg_comp <- round(exp(mydata$ct_wg_comp), 2)
 
 
