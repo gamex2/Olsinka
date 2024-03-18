@@ -95,7 +95,7 @@ catches_pas <- setDT(readxl::read_xlsx(here::here('catches_pas.xlsx')))
 # write.xlsx(all_catch_lip, here::here('all_catch_lip.xlsx'))
 all_catch_lip <- setDT(readxl::read_xlsx(here::here('all_catch_lip.xlsx')))
 all_gill_sto[, year := year(sa_date_start)]
-irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid, ct_sl, ct_weight, ct_diet, ct_sex)], 
+irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid, ct_sl, ct_weight, ct_diet, ct_sex, ct_envelope, ct_envelope_fishid)], 
                        all_sampling[, .(sa_samplingid, lo_nameczech, sa_date_start, year)],
                        by = "sa_samplingid")
 irisSubset_at <- merge(irisSubset_ca, all_trawling[, .(sa_samplingid, dl_depthlayerid)],
@@ -187,27 +187,47 @@ ggplot(data = PA.melt,
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
-#data analises stomach
+#data analises stomach####
 Stomach_content_all <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx')))
 Stomach_content_all[, 12:68][is.na(Stomach_content_all[, 12:68])] <- 0
 Stomach_content_all[["Sex"]][is.na(Stomach_content_all[["Sex"]])] <- "X"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
-# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
-# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
+Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
+Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
 colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
-new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL)], 
-                irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl)], by = "ct_catchid")
+ggplot(Stomach_content_all, aes(Species, fill = Gear)) + 
+  geom_histogram(position = "stack", stat = "count")
+ggplot(Stomach_content_all, aes(Species, fill = Stomach_content)) + 
+  geom_histogram(position = "stack", stat = "count")
+
+#Fish####
+Stomach_content_fish <- Stomach_content_all[Stomach_content_all$Fish==1, ]
+n_na  <-  sum(is.na(Stomach_content_fish$ct_catchid))
+Stomach_content_fish$ct_catchid[is.na(Stomach_content_fish$ct_catchid)] <- paste0("Fish_", seq_len(n_na))
+Stomach_melt_fish <- setDT(melt(Stomach_content_fish[, .(ct_catchid, Year, Gear, Species, Candat, Ouklej, Okoun, Plotice, jezdik, Cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown)], 
+                          id.vars = c("ct_catchid", "Year", "Gear", "Species"), variable.name = "fish_sto"))
+ggplot(Stomach_melt_fish[!value == 0], aes(fill=fish_sto, y=value, x=Species)) + 
+  geom_bar(position="stack", stat="identity")
+checking <- Stomach_melt_fish %>%
+  filter()
+  mutate(check1 = case_when(Wg == ct_weight ~ "ok_checked", 
+                            Wg != ct_weight ~ "danger", 
+                            TRUE ~ NA_character_))
+
+
+new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
+                irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl, ct_weight)], by = "ct_catchid")
 checking <- new_tb %>%
-mutate(check1 = case_when(SL == ct_sl ~ "ok_checked", 
-                          SL != ct_sl ~ "danger", 
+mutate(check1 = case_when(Wg == ct_weight ~ "ok_checked", 
+                          Wg != ct_weight ~ "danger", 
                         TRUE ~ NA_character_))   
  unique(checking$check1) 
 hist(Stomach_content_all$Stomach_content)
 count(Stomach_content_all$Stomach_content)
 table(data.frame(Stomach_content_all[1], value = unlist(Stomach_content_all[-1])))
-
+all_sampling <- all_sampling[, -c(5:9)]
 #Weigth calculation####
 #candat 2010
 c10 <- irisSubset_ca%>%
