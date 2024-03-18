@@ -206,16 +206,18 @@ ggplot(Stomach_content_all, aes(Species, fill = Stomach_content)) +
 Stomach_content_fish <- Stomach_content_all[Stomach_content_all$Fish==1, ]
 n_na  <-  sum(is.na(Stomach_content_fish$ct_catchid))
 Stomach_content_fish$ct_catchid[is.na(Stomach_content_fish$ct_catchid)] <- paste0("Fish_", seq_len(n_na))
-Stomach_melt_fish <- setDT(melt(Stomach_content_fish[, .(ct_catchid, Year, Gear, Species, Candat, Ouklej, Okoun, Plotice, jezdik, Cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown)], 
-                          id.vars = c("ct_catchid", "Year", "Gear", "Species"), variable.name = "fish_sto"))
+Stomach_melt_fish <- setDT(melt(Stomach_content_fish[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown)], 
+                          id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL"), variable.name = "fish_sto"))
 ggplot(Stomach_melt_fish[!value == 0], aes(fill=fish_sto, y=value, x=Species)) + 
   geom_bar(position="stack", stat="identity")
-checking <- Stomach_melt_fish %>%
-  filter()
-  mutate(check1 = case_when(Wg == ct_weight ~ "ok_checked", 
-                            Wg != ct_weight ~ "danger", 
+checking <- Stomach_melt_fish[Stomach_melt_fish$value != 0, ] %>%
+  mutate(check1 = case_when(Species == fish_sto ~ "Cannibal", 
+                            Species != fish_sto ~ "normal", 
                             TRUE ~ NA_character_))
-
+ggplot(checking, aes(Species, fill = check1)) + 
+  geom_histogram(position = "stack", stat = "count")
+ggplot(checking, aes(x = SL, fill = check1)) + 
+  geom_histogram(position = "dodge", stat = "count")
 
 new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
                 irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl, ct_weight)], by = "ct_catchid")
