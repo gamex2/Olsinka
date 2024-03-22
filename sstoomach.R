@@ -2,7 +2,7 @@ source(here::here('packages.R'))
 source(here::here('functions.R'))
 
 #Data from the database#####
-# con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
+con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
 # dbDisconnect(con)
 #Connecting to the database to extract info about Lipno
 
@@ -194,30 +194,89 @@ Stomach_content_all[["Sex"]][is.na(Stomach_content_all[["Sex"]])] <- "X"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
+colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
 Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
 Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
-colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
+
 ggplot(Stomach_content_all, aes(Species, fill = Gear)) + 
-  geom_histogram(position = "stack", stat = "count")
+  geom_histogram(position = "stack", stat = "count")+
+  scale_fill_viridis_d(option = 'C')+
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
 ggplot(Stomach_content_all, aes(Species, fill = Stomach_content)) + 
-  geom_histogram(position = "stack", stat = "count")
+  geom_histogram(position = "stack", stat = "count") +
+  scale_fill_viridis_d(option = 'C') +
+  labs(fill = "Stomach content")+
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+  
 
 #Fish####
 Stomach_content_fish <- Stomach_content_all[Stomach_content_all$Fish==1, ]
-n_na  <-  sum(is.na(Stomach_content_fish$ct_catchid))
+n_na <- sum(is.na(Stomach_content_fish$ct_catchid))
+Stomach_content_fish <- merge(Stomach_content_fish, all_catch_lip[,.(ct_catchid,ct_agegroup)], by = "ct_catchid", all.x = T)
 Stomach_content_fish$ct_catchid[is.na(Stomach_content_fish$ct_catchid)] <- paste0("Fish_", seq_len(n_na))
-Stomach_melt_fish <- setDT(melt(Stomach_content_fish[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown)], 
-                          id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL"), variable.name = "fish_sto"))
+Stomach_content_fish2 <- Stomach_content_fish %>% 
+  mutate(cannibal = case_when(Species == "candat" & candat != 0 ~ 1, #condition 1
+                         Species == "okoun" & okoun != 0 ~ 1,
+                         TRUE ~ 0)) #all other cases
+Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
+Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
+Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown, ct_agegroup)], 
+                          id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL", "ct_agegroup"), variable.name = "fish_sto"))
+
 ggplot(Stomach_melt_fish[!value == 0], aes(fill=fish_sto, y=value, x=Species)) + 
-  geom_bar(position="stack", stat="identity")
-checking <- Stomach_melt_fish[Stomach_melt_fish$value != 0, ] %>%
-  mutate(check1 = case_when(Species == fish_sto ~ "Cannibal", 
-                            Species != fish_sto ~ "normal", 
-                            TRUE ~ NA_character_))
-ggplot(checking, aes(Species, fill = check1)) + 
-  geom_histogram(position = "stack", stat = "count")
-ggplot(checking, aes(x = SL, fill = check1)) + 
-  geom_histogram(position = "dodge", stat = "count")
+  geom_bar(position="stack", stat="identity")+
+  facet_wrap(~Year, scales = "free") +
+  labs(fill = "Sp stomach")+
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 20),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+
+ggplot(Stomach_content_fish2[Species %in% c ("candat", "okoun")], aes(Species, fill = forcats::fct_rev(cannibal))) + 
+  geom_histogram(position = "stack", stat = "count")+
+ facet_wrap(~Year, scales = "free") +
+scale_fill_viridis_d(option = 'E') +
+  labs(fill = "Cannibalism")+
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 14),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
+ggplot(checking[Species == "candat"], aes(x = SL, fill = check1)) + 
+  geom_histogram(bins = 300)+
+  facet_grid(rows = "ct_agegroup")
 
 new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
                 irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl, ct_weight)], by = "ct_catchid")
