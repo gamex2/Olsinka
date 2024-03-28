@@ -100,6 +100,12 @@ irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid
                        by = "sa_samplingid")
 irisSubset_at <- merge(irisSubset_ca, all_trawling[, .(sa_samplingid, dl_depthlayerid)],
                        by = "sa_samplingid", all.x = T)
+Stomach_content_km2 <- setDT(read_excel("Stomach_content_km.xlsx", sheet = "extra"))
+Stomach_content_km2 <- merge(Stomach_content_km2, irisSubset_ca[year == 2017,.(year, ct_envelope, ct_envelope_fishid, sp_speciesid, ct_sl, ct_weight, ct_sex, ct_catchid, sa_samplingid)],
+                             by = c("ct_envelope", "ct_envelope_fishid"), all.x = T)
+Stomach_content_km2 <- merge(Stomach_content_km2, all_gill_sto[,.(sa_samplingid, gg_gearid, dl_depthlayerid, lo_nameczech)], by = "sa_samplingid", all.x = T)
+# write.xlsx(Stomach_content_km2, here::here('Stomach_content_km2.xlsx'))
+
 irisSubset_ca_sa <- irisSubset_ca[year == 2021]
 all_gill_sto[sa_samplingid == "F2012LIP-AT9"]
 all_trawling[sa_samplingid == "F2012LIP-AT9"]
@@ -197,6 +203,24 @@ Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
 colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
 Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
 Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
+Stomach_content_all <- Stomach_content_all[, c("Date","Zooplancton", "Chydoridae (Alona)"):=NULL]
+
+Stomach_content_all <- Stomach_content_all %>% 
+  mutate(invertebrate = case_when(Chironomidae != 0 ~ 1, #condition 1
+                                  Trichoptera != 0 ~ 1,
+                                  Koretra != 0 ~ 1,
+                                  Jepice != 0 ~ 1,
+                                  terr.hmyz != 0 ~ 1,
+                                  Nematode != 0 ~ 1,
+                                  crayfish != 0 ~ 1,
+                                  TRUE ~ 0)) #all other cases
+
+Stomach_content_all <- Stomach_content_all %>% 
+  mutate(zooplancton = case_when(Daphnia != 0 ~ 1, #condition 1
+                                 Leptodora != 0 ~ 1,
+                                 Diaphanosoma != 0 ~ 1,
+                                 Cyclopidae != 0 ~ 1,
+                                  TRUE ~ 0)) #all other cases
 
 ggplot(Stomach_content_all, aes(Species, fill = Gear)) + 
   geom_histogram(position = "stack", stat = "count")+
