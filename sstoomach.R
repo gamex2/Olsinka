@@ -174,8 +174,8 @@ Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
 colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
-Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
-Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
+# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
+# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
 Stomach_content_all <- Stomach_content_all[, c("Date","Zooplancton", "Chydoridae (Alona)"):=NULL]
 Stomach_content_all <- merge(Stomach_content_all, all_catch_lip[,.(ct_catchid,ct_agegroup)], by = "ct_catchid", all.x = T)
 
@@ -234,8 +234,8 @@ Stomach_content_fish2 <- Stomach_content_fish %>%
   mutate(cannibal = case_when(Species == "candat" & candat != 0 ~ 1, #condition 1
                          Species == "okoun" & okoun != 0 ~ 1,
                          TRUE ~ 0)) #all other cases
-Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
-Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
+# Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
+# Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
 Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown, ct_agegroup)], 
                           id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL", "ct_agegroup"), variable.name = "fish_sto"))
 Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, Candat_1,Candat_2,Candat_3,Candat_4, Candat_5,
@@ -246,7 +246,21 @@ Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Y
                                 id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL"), variable.name = "prey_sp", value.name = "prey_size"))
 Stomach_melt_fish_size <- Stomach_melt_fish_size[!prey_size == 0]
 Stomach_melt_fish_size[, ':='(ratio_prey = prey_size/SL)]
-summary(glm.nb(data = Stomach_melt_fish_size, formula = ratio_prey ~ Species))
+Stomach_melt_candat_size <- Stomach_melt_fish_size[Species == "candat"]
+Stomach_melt_candat_size <- Stomach_melt_candat_size %>%
+mutate(size_class = case_when(SL <= 160 ~ "YOY",
+                              SL %in% 160:450 ~ "old",
+                              SL > 450 ~ "legal"))
+shapiro.test(Stomach_melt_fish_size$ratio_prey)
+summary(glm(data = Stomach_melt_candat_size, formula = ratio_prey ~ size_class+Year))
+kruskal.test(ratio_prey ~ size_class, data = Stomach_melt_candat_size)
+
+Stomach_candat <- Stomach_content_fish2[Species == "candat"]
+Stomach_candat <- Stomach_candat %>% 
+   mutate(size_class = case_when(SL <= 160 ~ "YOY",
+                                 SL %in% 160:450 ~ "old",
+                                 SL > 450 ~ "legal"))
+summary(glm(data = Stomach_candat, formula = cannibal ~ size_class+Year, family = "binomial"))
 
 ggplot(Stomach_melt_fish[!value == 0 & Species %in% c('candat', 'okoun')], aes(fill=fish_sto, y=value, x=Species)) + 
   geom_bar(position="stack", stat="identity")+
