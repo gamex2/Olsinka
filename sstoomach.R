@@ -243,9 +243,10 @@ Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Y
                                                                Okoun_2, Okoun_3, Okoun_4, Plotice_1, Plotice_2, jezdik_1, jezdik_2, jezdik_3,
                                                                Cejn_1, cejnek_1, cejnek_2, kaprovitka_1, kaprovitka_2,Unknown_1, Unknown_2,
                                                                Unknown_3, Unknown_4)], 
-                                id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL"), variable.name = "fish_size"))
-Stomach_melt_fish_size <- Stomach_melt_fish_size[!value == 0]
-Stomach_melt_fish_size[, ':='(ratio_prey = value/SL)]
+                                id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL"), variable.name = "prey_sp", value.name = "prey_size"))
+Stomach_melt_fish_size <- Stomach_melt_fish_size[!prey_size == 0]
+Stomach_melt_fish_size[, ':='(ratio_prey = prey_size/SL)]
+summary(glm.nb(data = Stomach_melt_fish_size, formula = ratio_prey ~ Species))
 
 ggplot(Stomach_melt_fish[!value == 0 & Species %in% c('candat', 'okoun')], aes(fill=fish_sto, y=value, x=Species)) + 
   geom_bar(position="stack", stat="identity")+
