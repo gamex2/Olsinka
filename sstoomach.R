@@ -100,38 +100,11 @@ irisSubset_ca <- merge(all_catch_lip[, .(sa_samplingid, ct_catchid, sp_speciesid
                        by = "sa_samplingid")
 irisSubset_at <- merge(irisSubset_ca, all_trawling[, .(sa_samplingid, dl_depthlayerid)],
                        by = "sa_samplingid", all.x = T)
-Stomach_content_km2 <- setDT(read_excel("Stomach_content_km.xlsx", sheet = "extra"))
-Stomach_content_km2 <- merge(Stomach_content_km2, irisSubset_ca[year == 2017,.(year, ct_envelope, ct_envelope_fishid, sp_speciesid, ct_sl, ct_weight, ct_sex, ct_catchid, sa_samplingid)],
-                             by = c("ct_envelope", "ct_envelope_fishid"), all.x = T)
-Stomach_content_km2 <- merge(Stomach_content_km2, all_gill_sto[,.(sa_samplingid, gg_gearid, dl_depthlayerid, lo_nameczech)], by = "sa_samplingid", all.x = T)
-# write.xlsx(Stomach_content_km2, here::here('Stomach_content_km2.xlsx'))
 
 irisSubset_ca_sa <- irisSubset_ca[year == 2021]
 all_gill_sto[sa_samplingid == "F2012LIP-AT9"]
 all_trawling[sa_samplingid == "F2012LIP-AT9"]
 all_seining_lo[sa_samplingid == "F2012LIP-AT9"]
-
-#finding fish####
-irisSubset_ca_sa[sp_speciesid == "candat" & ct_sl == 69]
-fish_diet_2019_2021 <- setDT(readxl::read_xlsx(here::here('fish_diet_2019_2021.xlsx')))
-fish_diet_2019_2021 <- setDT(fish_diet_2019_2021)
-fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021, irisSubset_ca[, .(sa_samplingid, ct_catchid, year, lo_nameczech, ct_sex)], by = "ct_catchid")
-fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021_2, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
-fish_diet_2019_2021_2 <- merge(fish_diet_2019_2021_2, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid)], by = "sa_samplingid", all.x = T)
-write.xlsx(fish_diet_2019_2021_2, here::here('fish_diet_2019_2021_2.xlsx'))
-
-Stomach_content_km <- setDT(read_excel("Stomach_content_km.xlsx", sheet = "all_stom"))
-Stomach_content_km <- merge(Stomach_content_km, specs[, .(sp_scientificname, sp_speciesid)], by = "sp_scientificname", all.x = T)
-Stomach_content_km <- merge(Stomach_content_km, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
-Stomach_content_km <- merge(Stomach_content_km, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid, lo_nameczech, sa_date_start)], by = "sa_samplingid", all.x = T)
-write.xlsx(Stomach_content_km, here::here('Stomach_content_km2.xlsx'))
-
-Fish_diet_Bydz <- setDT(read_excel("Fish_diet_Bydz.xlsx"))
-Fish_diet_Bydz <- merge(Fish_diet_Bydz, all_catch_lip[, .(ct_catchid, ct_sex, sa_samplingid)], by = "ct_catchid")
-Fish_diet_Bydz <- merge(Fish_diet_Bydz, all_seining[, .(sa_samplingid, bsg_gearid)], by = "sa_samplingid", all.x = T)
-Fish_diet_Bydz <- merge(Fish_diet_Bydz, all_gill_sto[, .(sa_samplingid, dl_depthlayerid, gg_gearid, lo_nameczech, sa_date_start)], by = "sa_samplingid", all.x = T)
-Fish_diet_Bydz[, year := year(sa_date_start)]
-write.xlsx(Fish_diet_Bydz, here::here('Fish_diet_Bydz2.xlsx'))
 
 #Protected area graph
 MPA <- setDT(read.delim(here::here('MPA.txt')))
@@ -195,7 +168,7 @@ ggplot(data = PA.melt,
 
 #data analises stomach####
 Stomach_content_all <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx')))
-Stomach_content_all[, 12:68][is.na(Stomach_content_all[, 12:68])] <- 0
+Stomach_content_all[, 13:70][is.na(Stomach_content_all[, 13:70])] <- 0
 Stomach_content_all[["Sex"]][is.na(Stomach_content_all[["Sex"]])] <- "X"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
@@ -204,6 +177,7 @@ colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm
 Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
 Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
 Stomach_content_all <- Stomach_content_all[, c("Date","Zooplancton", "Chydoridae (Alona)"):=NULL]
+Stomach_content_all <- merge(Stomach_content_all, all_catch_lip[,.(ct_catchid,ct_agegroup)], by = "ct_catchid", all.x = T)
 
 Stomach_content_all <- Stomach_content_all %>% 
   mutate(invertebrate = case_when(Chironomidae != 0 ~ 1, #condition 1
@@ -222,7 +196,7 @@ Stomach_content_all <- Stomach_content_all %>%
                                  Cyclopidae != 0 ~ 1,
                                   TRUE ~ 0)) #all other cases
 
-ggplot(Stomach_content_all, aes(Species, fill = Gear)) + 
+ggplot(Stomach_content_all, aes(Species, fill = Habitat)) + 
   geom_histogram(position = "stack", stat = "count")+
   scale_fill_viridis_d(option = 'C')+
   theme(plot.title = element_text(size = 32, face = "bold"),
@@ -255,7 +229,6 @@ ggplot(Stomach_content_all, aes(Species, fill = Stomach_content)) +
 #Fish####
 Stomach_content_fish <- Stomach_content_all[Stomach_content_all$Fish==1, ]
 n_na <- sum(is.na(Stomach_content_fish$ct_catchid))
-Stomach_content_fish <- merge(Stomach_content_fish, all_catch_lip[,.(ct_catchid,ct_agegroup)], by = "ct_catchid", all.x = T)
 Stomach_content_fish$ct_catchid[is.na(Stomach_content_fish$ct_catchid)] <- paste0("Fish_", seq_len(n_na))
 Stomach_content_fish2 <- Stomach_content_fish %>% 
   mutate(cannibal = case_when(Species == "candat" & candat != 0 ~ 1, #condition 1
@@ -265,8 +238,16 @@ Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
 Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
 Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown, ct_agegroup)], 
                           id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL", "ct_agegroup"), variable.name = "fish_sto"))
+Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, Candat_1,Candat_2,Candat_3,Candat_4, Candat_5,
+                                                               Candat_6, Candat_7, Candat_8, Candat_9, Ouklej_1, Ouklej_2, Ouklej_3, Okoun_1,
+                                                               Okoun_2, Okoun_3, Okoun_4, Plotice_1, Plotice_2, jezdik_1, jezdik_2, jezdik_3,
+                                                               Cejn_1, cejnek_1, cejnek_2, kaprovitka_1, kaprovitka_2,Unknown_1, Unknown_2,
+                                                               Unknown_3, Unknown_4)], 
+                                id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL"), variable.name = "fish_size"))
+Stomach_melt_fish_size <- Stomach_melt_fish_size[!value == 0]
+Stomach_melt_fish_size[, ':='(ratio_prey = value/SL)]
 
-ggplot(Stomach_melt_fish[!value == 0], aes(fill=fish_sto, y=value, x=Species)) + 
+ggplot(Stomach_melt_fish[!value == 0 & Species %in% c('candat', 'okoun')], aes(fill=fish_sto, y=value, x=Species)) + 
   geom_bar(position="stack", stat="identity")+
   facet_wrap(~Year, scales = "free") +
   labs(fill = "Sp stomach")+
@@ -284,7 +265,7 @@ ggplot(Stomach_melt_fish[!value == 0], aes(fill=fish_sto, y=value, x=Species)) +
 
 ggplot(Stomach_content_fish2[Species %in% c ("candat", "okoun")], aes(Species, fill = forcats::fct_rev(cannibal))) + 
   geom_histogram(position = "stack", stat = "count")+
- facet_wrap(~Year, scales = "free") +
+ # facet_wrap(~Year, scales = "free") +
 scale_fill_viridis_d(option = 'E') +
   labs(fill = "Cannibalism")+
   theme(plot.title = element_text(size = 32, face = "bold"),
@@ -297,10 +278,6 @@ scale_fill_viridis_d(option = 'E') +
         legend.text = element_text(size = 26, face = "italic"))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-ggplot(checking[Species == "candat"], aes(x = SL, fill = check1)) + 
-  geom_histogram(bins = 300)+
-  facet_grid(rows = "ct_agegroup")
 
 new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
                 irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl, ct_weight)], by = "ct_catchid")
