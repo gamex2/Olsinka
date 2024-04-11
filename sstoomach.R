@@ -236,14 +236,26 @@ Stomach_content_fish2 <- Stomach_content_fish %>%
                          TRUE ~ 0)) #all other cases
 # Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
 # Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
-Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, kaprovitka, okounovitá, Unknown, ct_agegroup)], 
-                          id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL", "ct_agegroup"), variable.name = "fish_sto"))
-Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat_1,candat_2,candat_3,candat_4, candat_5,
+#Prey abundance####
+Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Species, cannibal, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, kaprovitka, okounovitá, Unknown)], 
+                          id.vars = c("ct_catchid", "Year", "Species", "SL", "cannibal"), variable.name = "prey_sp", value.name = "prey_n"))
+Stomach_melt_candat <- Stomach_melt_fish[Species == "candat"]
+Stomach_melt_candat <- Stomach_melt_candat %>%
+mutate(size_class = case_when(SL <= 160 ~ "YOY",
+                              SL %in% 160:450 ~ "old",
+                              SL > 450 ~ "legal"))
+# fry_abundance <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "fry"))
+Stomach_melt_candat <- merge(Stomach_melt_candat, fry_abundance, by = c("prey_sp", "Year"), all.x = T) 
+Stomach_melt_candat$size_class <- factor(Stomach_melt_candat$size_class, levels = c("YOY", "old", "legal"))
+summary(glm(data = Stomach_melt_candat, formula = cannibal ~ prey_n+size_class+Year, family = "binomial"))
+
+#prey size####
+Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Species, candat_1,candat_2,candat_3,candat_4, candat_5,
                                                                candat_6, candat_7, candat_8, candat_9, ouklej_1, ouklej_2, ouklej_3, okoun_1,
                                                                okoun_2, okoun_3, okoun_4, plotice_1, plotice_2, jezdik_1, jezdik_2, jezdik_3,
                                                                cejn_1, cejnek_1, cejnek_2, kaprovitka_1, kaprovitka_2,Unknown_1, Unknown_2,
                                                                Unknown_3, Unknown_4, cannibal)], 
-                                id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL", "cannibal"), variable.name = "prey_sp", value.name = "prey_size"))
+                                id.vars = c("ct_catchid", "Year", "Species", "SL", "cannibal"), variable.name = "prey_sp", value.name = "prey_size"))
 Stomach_melt_fish_size <- Stomach_melt_fish_size[!prey_size == 0]
 Stomach_melt_fish_size[, ':='(ratio_prey = prey_size/SL)]
 Stomach_melt_candat_size <- Stomach_melt_fish_size[Species == "candat"]
@@ -252,7 +264,7 @@ mutate(size_class = case_when(SL <= 160 ~ "YOY",
                               SL %in% 160:450 ~ "old",
                               SL > 450 ~ "legal"))
 Stomach_melt_candat_size$prey_sp <- sub("\\_.*", "", as.character(Stomach_melt_candat_size$prey_sp))
-fry_abundance <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "fry"))
+
 Stomach_melt_candat_size2 <- merge(Stomach_melt_candat_size, fry_abundance, by = c("prey_sp", "Year"), all.x = T) 
 Stomach_melt_candat_size2$size_class <- factor(Stomach_melt_candat_size2$size_class, levels = c("YOY", "old", "legal"))
 
