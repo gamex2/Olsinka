@@ -2,7 +2,7 @@ source(here::here('packages.R'))
 source(here::here('functions.R'))
 
 #Data from the database#####
-con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
+# con <- dbConnect(PostgreSQL(), dbname = "fishecu_complex-survey_db", user = "fishecuuser", host = "172.21.3.20", password = "f1sh3cuus3r!")
 # dbDisconnect(con)
 #Connecting to the database to extract info about Lipno
 
@@ -167,8 +167,8 @@ ggplot(data = PA.melt,
 
 
 #data analises stomach####
-Stomach_content_all <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx')))
-Stomach_content_all[, 13:70][is.na(Stomach_content_all[, 13:70])] <- 0
+Stomach_content_all <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "stomach"))
+Stomach_content_all[, 13:69][is.na(Stomach_content_all[, 13:69])] <- 0
 Stomach_content_all[["Sex"]][is.na(Stomach_content_all[["Sex"]])] <- "X"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
@@ -236,14 +236,14 @@ Stomach_content_fish2 <- Stomach_content_fish %>%
                          TRUE ~ 0)) #all other cases
 # Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
 # Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
-Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, pstruh, kaprovitka, okounovitá, Unknown, ct_agegroup)], 
+Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, kaprovitka, okounovitá, Unknown, ct_agegroup)], 
                           id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL", "ct_agegroup"), variable.name = "fish_sto"))
-Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, Candat_1,Candat_2,Candat_3,Candat_4, Candat_5,
-                                                               Candat_6, Candat_7, Candat_8, Candat_9, Ouklej_1, Ouklej_2, Ouklej_3, Okoun_1,
-                                                               Okoun_2, Okoun_3, Okoun_4, Plotice_1, Plotice_2, jezdik_1, jezdik_2, jezdik_3,
-                                                               Cejn_1, cejnek_1, cejnek_2, kaprovitka_1, kaprovitka_2,Unknown_1, Unknown_2,
-                                                               Unknown_3, Unknown_4)], 
-                                id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL"), variable.name = "prey_sp", value.name = "prey_size"))
+Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Gear, Species, candat_1,candat_2,candat_3,candat_4, candat_5,
+                                                               candat_6, candat_7, candat_8, candat_9, ouklej_1, ouklej_2, ouklej_3, okoun_1,
+                                                               okoun_2, okoun_3, okoun_4, plotice_1, plotice_2, jezdik_1, jezdik_2, jezdik_3,
+                                                               cejn_1, cejnek_1, cejnek_2, kaprovitka_1, kaprovitka_2,Unknown_1, Unknown_2,
+                                                               Unknown_3, Unknown_4, cannibal)], 
+                                id.vars = c("ct_catchid", "Year", "Gear", "Species", "SL", "cannibal"), variable.name = "prey_sp", value.name = "prey_size"))
 Stomach_melt_fish_size <- Stomach_melt_fish_size[!prey_size == 0]
 Stomach_melt_fish_size[, ':='(ratio_prey = prey_size/SL)]
 Stomach_melt_candat_size <- Stomach_melt_fish_size[Species == "candat"]
@@ -251,15 +251,21 @@ Stomach_melt_candat_size <- Stomach_melt_candat_size %>%
 mutate(size_class = case_when(SL <= 160 ~ "YOY",
                               SL %in% 160:450 ~ "old",
                               SL > 450 ~ "legal"))
-shapiro.test(Stomach_melt_fish_size$ratio_prey)
-summary(glm(data = Stomach_melt_candat_size, formula = ratio_prey ~ size_class+Year))
-kruskal.test(ratio_prey ~ size_class, data = Stomach_melt_candat_size)
+Stomach_melt_candat_size$prey_sp <- sub("\\_.*", "", as.character(Stomach_melt_candat_size$prey_sp))
+fry_abundance <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "fry"))
+Stomach_melt_candat_size2 <- merge(Stomach_melt_candat_size, fry_abundance, by = c("prey_sp", "Year"), all.x = T) 
+Stomach_melt_candat_size2$size_class <- factor(Stomach_melt_candat_size2$size_class, levels = c("YOY", "old", "legal"))
+
+shapiro.test(Stomach_melt_candat_size2$ratio_prey)
+summary(glm(data = Stomach_melt_candat_size2, formula = cannibal ~ size_class+Year+Fry_abundance+ratio_prey, family = "binomial"))
+kruskal.test(ratio_prey ~ size_class, data = Stomach_melt_candat_size2)
 
 Stomach_candat <- Stomach_content_fish2[Species == "candat"]
 Stomach_candat <- Stomach_candat %>% 
-   mutate(size_class = case_when(SL <= 160 ~ "YOY",
-                                 SL %in% 160:450 ~ "old",
-                                 SL > 450 ~ "legal"))
+   mutate(size_class = case_when(SL <= 160 ~ "100",
+                                 SL %in% 161:390 ~ "200",
+                                 SL > 391 ~ "600"))
+set.seed(333)
 summary(glm(data = Stomach_candat, formula = cannibal ~ size_class+Year, family = "binomial"))
 
 ggplot(Stomach_melt_fish[!value == 0 & Species %in% c('candat', 'okoun')], aes(fill=fish_sto, y=value, x=Species)) + 
