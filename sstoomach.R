@@ -174,8 +174,6 @@ Stomach_content_all$Sex[Stomach_content_all$Sex == "Male"] <- "M"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "Female"] <- "F"
 Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
 colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
-# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 0] <- "no"
-# Stomach_content_all$Stomach_content[Stomach_content_all$Stomach_content == 1] <- "yes"
 Stomach_content_all <- Stomach_content_all[, c("Date","Zooplancton", "Chydoridae (Alona)"):=NULL]
 Stomach_content_all <- merge(Stomach_content_all, all_catch_lip[,.(ct_catchid,ct_agegroup)], by = "ct_catchid", all.x = T)
 
@@ -196,7 +194,11 @@ Stomach_content_all <- Stomach_content_all %>%
                                  Cyclopidae != 0 ~ 1,
                                   TRUE ~ 0)) #all other cases
 
-ggplot(Stomach_content_all, aes(Species, fill = Habitat)) + 
+Stomach_content_all_gr <- Stomach_content_all
+Stomach_content_all_gr$Stomach_content[Stomach_content_all_gr$Stomach_content == 0] <- "no"
+Stomach_content_all_gr$Stomach_content[Stomach_content_all_gr$Stomach_content == 1] <- "yes"
+
+ggplot(Stomach_content_all_gr, aes(Species, fill = Habitat)) + 
   geom_histogram(position = "stack", stat = "count")+
   scale_fill_viridis_d(option = 'C')+
   theme(plot.title = element_text(size = 32, face = "bold"),
@@ -210,9 +212,9 @@ ggplot(Stomach_content_all, aes(Species, fill = Habitat)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-ggplot(Stomach_content_all, aes(Species, fill = Stomach_content)) + 
+ggplot(Stomach_content_all_gr, aes(Species, fill = Stomach_content)) +
   geom_histogram(position = "stack", stat = "count") +
-  scale_fill_viridis_d(option = 'C') +
+  scale_fill_viridis_d(option = 'D') +
   labs(fill = "Stomach content")+
   theme(plot.title = element_text(size = 32, face = "bold"),
         axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
@@ -230,27 +232,26 @@ ggplot(Stomach_content_all, aes(Species, fill = Stomach_content)) +
 Stomach_content_fish <- Stomach_content_all[Stomach_content_all$Fish==1, ]
 n_na <- sum(is.na(Stomach_content_fish$ct_catchid))
 Stomach_content_fish$ct_catchid[is.na(Stomach_content_fish$ct_catchid)] <- paste0("Fish_", seq_len(n_na))
-Stomach_content_fish2 <- Stomach_content_fish %>% 
+Stomach_content_fish <- Stomach_content_fish %>% 
   mutate(cannibal = case_when(Species == "candat" & candat != 0 ~ 1, #condition 1
                          Species == "okoun" & okoun != 0 ~ 1,
                          TRUE ~ 0)) #all other cases
-# Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
-# Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
 #Prey abundance####
-Stomach_melt_fish <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Species, cannibal, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, kaprovitka, okounovitá, Unknown)], 
+Stomach_melt_fish <- setDT(melt(Stomach_content_fish[, .(ct_catchid, SL, Year, Species, cannibal, candat, ouklej, okoun, plotice, jezdik, cejn, cejnek, kaprovitka, okounovitá, Unknown)], 
                           id.vars = c("ct_catchid", "Year", "Species", "SL", "cannibal"), variable.name = "prey_sp", value.name = "prey_n"))
 Stomach_melt_candat <- Stomach_melt_fish[Species == "candat"]
 Stomach_melt_candat <- Stomach_melt_candat %>%
 mutate(size_class = case_when(SL <= 160 ~ "YOY",
                               SL %in% 160:450 ~ "old",
                               SL > 450 ~ "legal"))
-# fry_abundance <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "fry"))
+fry_abundance <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "fry"))
 Stomach_melt_candat <- merge(Stomach_melt_candat, fry_abundance, by = c("prey_sp", "Year"), all.x = T) 
 Stomach_melt_candat$size_class <- factor(Stomach_melt_candat$size_class, levels = c("YOY", "old", "legal"))
 summary(glm(data = Stomach_melt_candat, formula = cannibal ~ prey_n+size_class+Year, family = "binomial"))
 
+
 #prey size####
-Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish2[, .(ct_catchid, SL, Year, Species, candat_1,candat_2,candat_3,candat_4, candat_5,
+Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish[, .(ct_catchid, SL, Year, Species, candat_1,candat_2,candat_3,candat_4, candat_5,
                                                                candat_6, candat_7, candat_8, candat_9, ouklej_1, ouklej_2, ouklej_3, okoun_1,
                                                                okoun_2, okoun_3, okoun_4, plotice_1, plotice_2, jezdik_1, jezdik_2, jezdik_3,
                                                                cejn_1, cejnek_1, cejnek_2, kaprovitka_1, kaprovitka_2,Unknown_1, Unknown_2,
@@ -272,7 +273,7 @@ shapiro.test(Stomach_melt_candat_size2$ratio_prey)
 summary(glm(data = Stomach_melt_candat_size2, formula = cannibal ~ size_class+Year+Fry_abundance+ratio_prey, family = "binomial"))
 kruskal.test(ratio_prey ~ size_class, data = Stomach_melt_candat_size2)
 
-Stomach_candat <- Stomach_content_fish2[Species == "candat"]
+Stomach_candat <- Stomach_content_fish[Species == "candat"]
 Stomach_candat <- Stomach_candat %>% 
    mutate(size_class = case_when(SL <= 160 ~ "100",
                                  SL %in% 161:390 ~ "200",
@@ -295,8 +296,11 @@ ggplot(Stomach_melt_fish[!value == 0 & Species %in% c('candat', 'okoun')], aes(f
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+Stomach_content_fish2 <- Stomach_content_fish
+Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
+Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
 
-ggplot(Stomach_content_fish2[Species %in% c ("candat", "okoun")], aes(Species, fill = forcats::fct_rev(cannibal))) + 
+ggplot(Stomach_content_fish2[Species %in% c ("candat", "okoun") & !Stomach_content == 0], aes(Species, fill = forcats::fct_rev(cannibal))) + 
   geom_histogram(position = "stack", stat = "count")+
  # facet_wrap(~Year, scales = "free") +
 scale_fill_viridis_d(option = 'E') +
@@ -312,30 +316,50 @@ scale_fill_viridis_d(option = 'E') +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
-                irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl, ct_weight)], by = "ct_catchid")
-checking <- new_tb %>%
-mutate(check1 = case_when(Wg == ct_weight ~ "ok_checked", 
-                          Wg != ct_weight ~ "danger", 
-                        TRUE ~ NA_character_))   
- unique(checking$check1) 
-hist(Stomach_content_all$Stomach_content)
-count(Stomach_content_all$Stomach_content)
-table(data.frame(Stomach_content_all[1], value = unlist(Stomach_content_all[-1])))
-all_sampling <- all_sampling[, -c(5:9)]
-#Weigth calculation####
-#candat 2010
-c10 <- irisSubset_ca%>%
-  dplyr::filter(sp_speciesid == "sumec" & year == 2010 & !is.na(ct_weight))
-c10$logL <- log(c10$ct_sl)
-c10$logW <- log(c10$ct_weight)
-models <- lapply(split(c10, c10$sp_speciesid), 'lm', formula = logW ~ logL)
+Stomach_melt_candat2 <- Stomach_melt_candat
+Stomach_melt_candat2$cannibal[Stomach_melt_candat2$cannibal == 0] <- "no"
+Stomach_melt_candat2$cannibal[Stomach_melt_candat2$cannibal == 1] <- "yes"
+Stomach_melt_candat2 <- Stomach_melt_candat2[!prey_n == 0]
 
-#Sander Lucioperca
-mydata <- setDT(structure(list(ct_sl = c(580, 246, 2)), 
-                          class = "data.table"))
-mydata[, ct_wg_comp := predict.lm(object = models$`sumec`,
-                                       newdata = data.frame(logL = log(mydata$ct_sl)))]
-mydata$ct_wg_comp <- round(exp(mydata$ct_wg_comp), 2)
+ggplot(Stomach_melt_candat2[Species == "candat"], aes(x=as.factor(Year), y= prey_n, colour=cannibal)) +
+    geom_boxplot() +
+theme(plot.title = element_text(size = 32, face = "bold"),
+     axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+     axis.text.y = element_text(size = 28),
+     strip.text = element_text(size = 14),
+     axis.title.x = element_text(size = 20),
+     axis.title.y = element_text(size = 26),
+     legend.title = element_text(size=28),
+     legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
+
+# new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
+#                 irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl, ct_weight)], by = "ct_catchid")
+# checking <- new_tb %>%
+# mutate(check1 = case_when(Wg == ct_weight ~ "ok_checked", 
+#                           Wg != ct_weight ~ "danger", 
+#                         TRUE ~ NA_character_))   
+#  unique(checking$check1) 
+# hist(Stomach_content_all$Stomach_content)
+# count(Stomach_content_all$Stomach_content)
+# table(data.frame(Stomach_content_all[1], value = unlist(Stomach_content_all[-1])))
+# all_sampling <- all_sampling[, -c(5:9)]
+# #Weigth calculation####
+# #candat 2010
+# c10 <- irisSubset_ca%>%
+#   dplyr::filter(sp_speciesid == "sumec" & year == 2010 & !is.na(ct_weight))
+# c10$logL <- log(c10$ct_sl)
+# c10$logW <- log(c10$ct_weight)
+# models <- lapply(split(c10, c10$sp_speciesid), 'lm', formula = logW ~ logL)
+# 
+# #Sander Lucioperca
+# mydata <- setDT(structure(list(ct_sl = c(580, 246, 2)), 
+#                           class = "data.table"))
+# mydata[, ct_wg_comp := predict.lm(object = models$`sumec`,
+#                                        newdata = data.frame(logL = log(mydata$ct_sl)))]
+# mydata$ct_wg_comp <- round(exp(mydata$ct_wg_comp), 2)
+# 
+# 
