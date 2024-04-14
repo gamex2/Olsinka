@@ -245,7 +245,7 @@ mutate(size_class = case_when(SL <= 160 ~ "YOY",
                               SL %in% 160:450 ~ "old",
                               SL > 450 ~ "legal"))
 fry_abundance <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "fry"))
-Stomach_melt_candat <- merge(Stomach_melt_candat, fry_abundance, by = c("prey_sp", "Year"), all.x = T) 
+Stomach_melt_candat <- merge(Stomach_melt_candat, fry_abundance[prey_sp == "candat"], by = "Year", all.x = T) 
 Stomach_melt_candat$size_class <- factor(Stomach_melt_candat$size_class, levels = c("YOY", "old", "legal"))
 summary(glm(data = Stomach_melt_candat, formula = cannibal ~ prey_n+size_class+Year, family = "binomial"))
 
@@ -300,7 +300,7 @@ Stomach_content_fish2 <- Stomach_content_fish
 Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 0] <- "no"
 Stomach_content_fish2$cannibal[Stomach_content_fish2$cannibal == 1] <- "yes"
 
-ggplot(Stomach_content_fish2[Species %in% c ("candat", "okoun") & !Stomach_content == 0], aes(Species, fill = forcats::fct_rev(cannibal))) + 
+ggplot(Stomach_content_fish2[Species %in% c ("candat", "okoun") & !Stomach_content == 0], aes(x=Species, fill = forcats::fct_rev(cannibal))) + 
   geom_histogram(position = "stack", stat = "count")+
  # facet_wrap(~Year, scales = "free") +
 scale_fill_viridis_d(option = 'E') +
@@ -316,10 +316,11 @@ scale_fill_viridis_d(option = 'E') +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+
 Stomach_melt_candat2 <- Stomach_melt_candat
 Stomach_melt_candat2$cannibal[Stomach_melt_candat2$cannibal == 0] <- "no"
 Stomach_melt_candat2$cannibal[Stomach_melt_candat2$cannibal == 1] <- "yes"
-Stomach_melt_candat2 <- Stomach_melt_candat2[!prey_n == 0]
+Stomach_melt_candat2 <- Stomach_melt_candat2[!value == 0]
 
 ggplot(Stomach_melt_candat2[Species == "candat"], aes(x=as.factor(Year), y= prey_n, colour=cannibal)) +
     geom_boxplot() +
@@ -334,6 +335,8 @@ theme(plot.title = element_text(size = 32, face = "bold"),
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
+ggplot(Stomach_melt_candat2,aes(as.factor(Year),value,fill=cannibal)) + 
+  geom_col(na.rm=TRUE)
 
 
 # new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
