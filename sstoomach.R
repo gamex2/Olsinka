@@ -176,6 +176,8 @@ Stomach_content_all$Sex[Stomach_content_all$Sex == "?"] <- "X"
 colnames(Stomach_content_all)[which(colnames(Stomach_content_all) %in% c("SL (mm)","Weight (g)", "Stomach content") )] <- c("SL","Wg", "Stomach_content")
 Stomach_content_all <- Stomach_content_all[, c("Date","Zooplancton", "Chydoridae (Alona)"):=NULL]
 Stomach_content_all <- merge(Stomach_content_all, all_catch_lip[,.(ct_catchid,ct_agegroup)], by = "ct_catchid", all.x = T)
+n_na <- sum(is.na(Stomach_content_all$ct_catchid))
+Stomach_content_all$ct_catchid[is.na(Stomach_content_all$ct_catchid)] <- paste0("Fish_", seq_len(n_na))
 
 Stomach_content_all <- Stomach_content_all %>% 
   mutate(invertebrate = case_when(Chironomidae != 0 ~ 1, #condition 1
@@ -197,6 +199,7 @@ Stomach_content_all <- Stomach_content_all %>%
 Stomach_content_all_gr <- Stomach_content_all
 Stomach_content_all_gr$Stomach_content[Stomach_content_all_gr$Stomach_content == 0] <- "no"
 Stomach_content_all_gr$Stomach_content[Stomach_content_all_gr$Stomach_content == 1] <- "yes"
+Stomach_content_all_gr <- Stomach_content_all_gr[!is.na(Stomach_content_all_gr$Species),]
 
 ggplot(Stomach_content_all_gr, aes(Species, fill = Habitat)) + 
   geom_histogram(position = "stack", stat = "count")+
@@ -227,11 +230,27 @@ ggplot(Stomach_content_all_gr, aes(Species, fill = Stomach_content)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
   
+Stomach_content_all_melt <- setDT(melt(Stomach_content_all_gr[, .(ct_catchid,Year, Species, Fish, invertebrate, zooplancton)], 
+                                       id.vars = c("ct_catchid", "Year", "Species"), variable.name = "prey", value.name = "prey_n"))
+Stomach_content_all_melt <- Stomach_content_all_melt[prey_n==1,]
+
+ggplot(Stomach_content_all_melt, aes(x = as.factor(Year), y = prey_n, fill = prey)) +
+  geom_col(position = "stack") +
+  facet_wrap(~Species, scales = "free") + 
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 26),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+
 
 #Fish####
 Stomach_content_fish <- Stomach_content_all[Stomach_content_all$Fish==1, ]
-n_na <- sum(is.na(Stomach_content_fish$ct_catchid))
-Stomach_content_fish$ct_catchid[is.na(Stomach_content_fish$ct_catchid)] <- paste0("Fish_", seq_len(n_na))
 Stomach_content_fish <- Stomach_content_fish %>% 
   mutate(cannibal = case_when(Species == "candat" & candat != 0 ~ 1, #condition 1
                          Species == "okoun" & okoun != 0 ~ 1,
@@ -245,10 +264,26 @@ mutate(size_class = case_when(SL <= 160 ~ "YOY",
                               SL %in% 160:450 ~ "old",
                               SL > 450 ~ "legal"))
 fry_abundance <- setDT(readxl::read_xlsx(here::here('Stomach.content.all.xlsx'), sheet = "fry"))
-Stomach_melt_candat <- merge(Stomach_melt_candat, fry_abundance[prey_sp == "candat"], by = "Year", all.x = T) 
+Stomach_melt_candat <- merge(Stomach_melt_candat, fry_abundance, by = c("Year", "prey_sp"), all.x = T) 
 Stomach_melt_candat$size_class <- factor(Stomach_melt_candat$size_class, levels = c("YOY", "old", "legal"))
+set.seed(3333)
 summary(glm(data = Stomach_melt_candat, formula = cannibal ~ prey_n+size_class+Year, family = "binomial"))
+fry_abundance$Year <- as.numeric(as.character(fry_abundance$Year))
 
+ggplot(fry_abundance, aes(as.factor(Year), Fry_abundance, colour = prey_sp, group =prey_sp)) +
+  geom_line()+
+  geom_point()+
+  labs(colour = "Prey sp", x= "Year", y="Prey abundance") +
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 20),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 #prey size####
 Stomach_melt_fish_size <- setDT(melt(Stomach_content_fish[, .(ct_catchid, SL, Year, Species, candat_1,candat_2,candat_3,candat_4, candat_5,
@@ -268,6 +303,22 @@ Stomach_melt_candat_size$prey_sp <- sub("\\_.*", "", as.character(Stomach_melt_c
 
 Stomach_melt_candat_size2 <- merge(Stomach_melt_candat_size, fry_abundance, by = c("prey_sp", "Year"), all.x = T) 
 Stomach_melt_candat_size2$size_class <- factor(Stomach_melt_candat_size2$size_class, levels = c("YOY", "old", "legal"))
+
+ggplot(Stomach_melt_candat_size, aes(as.factor(Year), prey_size)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.2, aes(color = prey_sp, shape = prey_sp, size = 1))+
+  scale_shape_manual(values = rep(15:18, 2)) +
+  scale_color_manual(values=c(rep("blue3",1), rep("black",3), rep( "green4", 1), rep( "red", 3))) +
+  theme(plot.title = element_text(size = 32, face = "bold"),
+        axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+        axis.text.y = element_text(size = 28),
+        strip.text = element_text(size = 20),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 26),
+        legend.title = element_text(size=28),
+        legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 shapiro.test(Stomach_melt_candat_size2$ratio_prey)
 summary(glm(data = Stomach_melt_candat_size2, formula = cannibal ~ size_class+Year+Fry_abundance+ratio_prey, family = "binomial"))
@@ -317,12 +368,12 @@ scale_fill_viridis_d(option = 'E') +
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 
-Stomach_melt_candat2 <- Stomach_melt_candat
+Stomach_melt_candat2 <- Stomach_content_fish[Species == "candat"]
 Stomach_melt_candat2$cannibal[Stomach_melt_candat2$cannibal == 0] <- "no"
 Stomach_melt_candat2$cannibal[Stomach_melt_candat2$cannibal == 1] <- "yes"
-Stomach_melt_candat2 <- Stomach_melt_candat2[!value == 0]
+Stomach_melt_candat2 <- merge(Stomach_melt_candat2, fry_abundance[prey_sp == "candat"], by = "Year", all.x = T) 
 
-ggplot(Stomach_melt_candat2[Species == "candat"], aes(x=as.factor(Year), y= prey_n, colour=cannibal)) +
+ggplot(Stomach_melt_candat2, aes(x=as.factor(Year), y= prey_n, colour=cannibal)) +
     geom_boxplot() +
 theme(plot.title = element_text(size = 32, face = "bold"),
      axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
@@ -335,9 +386,20 @@ theme(plot.title = element_text(size = 32, face = "bold"),
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
-ggplot(Stomach_melt_candat2,aes(as.factor(Year),value,fill=cannibal)) + 
-  geom_col(na.rm=TRUE)
-
+ggplot(Stomach_melt_candat2,aes(as.factor(Year),Fish,fill=forcats::fct_rev(cannibal))) + 
+  geom_col(na.rm=TRUE)+
+  geom_line(data= Stomach_melt_candat2,group=1,mapping=aes(x=as.factor(Year),y=Fry_abundance/10, linewidth = .5))+
+  labs(fill = "Cannibalism", x="Year", y="nfish", linewidth = "Fry abundance")+
+theme(plot.title = element_text(size = 32, face = "bold"),
+      axis.text.x = element_text(size = 28,angle = 45, hjust = 1.05, vjust = 1.05),
+      axis.text.y = element_text(size = 28),
+      strip.text = element_text(size = 14),
+      axis.title.x = element_text(size = 20),
+      axis.title.y = element_text(size = 26),
+      legend.title = element_text(size=28),
+      legend.text = element_text(size = 26, face = "italic"))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
 
 # new_tb <- merge(Stomach_content_all[,.(ct_catchid, Species, Year, SL, Wg)], 
 #                 irisSubset_ca[,.(ct_catchid, sp_speciesid, year, ct_sl, ct_weight)], by = "ct_catchid")
